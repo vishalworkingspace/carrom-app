@@ -362,15 +362,6 @@ export default function App() {
   const [notes, setNotes] = useState([]);
   const [noteInput, setNoteInput] = useState("");
 
-  const persist = async (nd) => {
-  setDb(nd);
-
-  const ids = Object.keys(nd);
-  for (let id of ids) {
-    await updateTournament(id, nd[id]);
-  }
-};
-
   const tournaments = Object.values(db);
   const at = db[activeTid]; // active tournament
   const ppw = winsRequired > 0 ? Math.round(totalPoints / winsRequired) : 0;
@@ -409,28 +400,38 @@ export default function App() {
   };
 
 async function createTournament() {
-  console.log("BUTTON CLICKED");
+  const t = {
+    id: uid(),
+    name: tName.trim(),
+    winsRequired,
+    totalPoints,
+    pointsPerWin: ppw,
+    teams: cTeams.map((t, i) => ({
+      ...t,
+      wins: 0,
+      losses: 0,
+      points: 0,
+      emoji: TEAM_EMOJIS[i],
+      color: TEAM_COLORS[i],
+      bg: TEAM_BG[i],
+    })),
+    history: [],
+    notes,
+    status: "active",
+    createdAt: Date.now(),
+    winnerId: null,
+    matchCount: 0,
+  };
 
-  try {
-    const docRef = await addDoc(collection(db, "tournaments"), {
-      name: "test tournament."
-    });
+  const docRef = await addDoc(collection(firestoreDB, "tournaments"), t);
 
-    console.log("TEST SAVED ID:", docRef.id);
+  setDb((prev) => ({
+    ...prev,
+    [docRef.id]: t,
+  }));
 
-  } catch (error) {
-    console.error("ERROR:", error);
-  }
+  openT(docRef.id);
 }
-    const t = {
-      id:uid(), name:tName.trim(), winsRequired, totalPoints, pointsPerWin:ppw,
-      teams:cTeams.map((t,i)=>({...t,wins:0,losses:0,points:0,emoji:TEAM_EMOJIS[i],color:TEAM_COLORS[i],bg:TEAM_BG[i]})),
-      history:[], notes, status:"active", createdAt:Date.now(), winnerId:null, matchCount:0,
-    };
-    const id = await saveTournament(t);
-setDb(prev => ({ ...prev, [id]: t }));
-openT(id);
-  }
 
   // record match with players
   function recordMatch(t, winnerTeamId, loserTeamId, t0Players, t1Players) {
@@ -452,7 +453,12 @@ openT(id);
     });
     const winTeam=nt.teams.find(tm=>tm.id===winnerTeamId);
     if(winTeam&&winTeam.wins>=nt.winsRequired){nt.status="completed";nt.winnerId=winnerTeamId;setWinner(winTeam);}
-    persist({...db,[nt.id]:nt});
+   await updateTournament(nt.id, nt);
+
+setDb((prev) => ({
+  ...prev,
+  [nt.id]: nt,
+}));
   }
 
   function undoMatch() {
@@ -467,7 +473,12 @@ openT(id);
       if(tm.id===last.loserId) return {...tm,losses:Math.max(0,tm.losses-1)};
       return tm;
     });
-    persist({...db,[t.id]:t});
+    await updateTournament(t.id, t);
+
+setDb((prev) => ({
+  ...prev,
+  [t.id]: t,
+}));
     setWinner(null);
   }
 
