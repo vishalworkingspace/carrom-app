@@ -409,6 +409,14 @@ export default function App() {
   };
 
   async function createTournament() {
+  console.log("BUTTON CLICKED");
+
+  // 🔥 YE ADD KARO
+  await addDoc(collection(db, "tournaments"), {
+    name: "test tournament."
+  });
+
+  console.log("TEST SAVED");
     const t = {
       id:uid(), name:tName.trim(), winsRequired, totalPoints, pointsPerWin:ppw,
       teams:cTeams.map((t,i)=>({...t,wins:0,losses:0,points:0,emoji:TEAM_EMOJIS[i],color:TEAM_COLORS[i],bg:TEAM_BG[i]})),
