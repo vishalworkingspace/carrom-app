@@ -344,9 +344,14 @@ function getPlayerStats(t) {
 export default function App() {
   const [db, setDb] = useState({});
 
-  useEffect(() => {
-    loadDB().then(setDb);
-  }, []);
+ useEffect(() => {
+  async function fetchData() {
+    const data = await loadDB();
+    console.log("🔥 FINAL DATA:", data);
+    setDb(data);
+  }
+  fetchData();
+}, []);
 
   const [view, setView] = useState("home");
   const [activeTid, setActiveTid] = useState(null);
