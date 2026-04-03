@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { db as firestoreDB } from "./firebase";
 import { collection, addDoc, getDocs, doc, updateDoc } from "firebase/firestore";
+import { Analytics } from "@vercel/analytics/react";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 // 🔥 FIREBASE FUNCTIONS
@@ -439,7 +440,7 @@ async function createTournament() {
 }
 
   // record match with players
-  function recordMatch(t, winnerTeamId, loserTeamId, t0Players, t1Players) {
+  async function recordMatch(t, winnerTeamId, loserTeamId, t0Players, t1Players) {
     const nt = {...t};
     nt.matchCount=(nt.matchCount||0)+1;
     const t0Id=nt.teams[0].id, t1Id=nt.teams[1].id;
@@ -466,7 +467,7 @@ setDb((prev) => ({
 }));
   }
 
-  function undoMatch() {
+  async function undoMatch() {
     const t={...at};
     if(!t.history||!t.history.length) return;
     const last=t.history[t.history.length-1];
@@ -542,6 +543,7 @@ setDb((prev) => ({
         />
       )}
       {winner&&(<><Confetti/><WinnerBanner team={winner} onClose={()=>setWinner(null)}/></>)}
+      <Analytics />
     </>
   );
 }
@@ -1206,7 +1208,7 @@ function TeamPopup({team,t,onClose}) {
   );
 }
 
-// ─── History Tab ──────────────────────────────────────────────────────────────
+// ─── History Tab ─────────────────────────────────────���────────────────────────
 function HistoryTab({t}) {
   const history=t.history||[];
   function pName(pid) {
@@ -1248,7 +1250,7 @@ function HistoryTab({t}) {
   );
 }
 
-// ─── Notes Tab ────────────────────────────────────────────────────────────────
+// ─── Notes Tab ─────────────────────────────────────────────────────────���──────
 function NotesTab({t,onUpdateNotes}) {
   const [notes,setNotes]=useState(t.notes||[]);
   const [input,setInput]=useState("");
