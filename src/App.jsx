@@ -1,30 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { db as firestoreDB } from "./firebase";
-import { collection, addDoc, getDocs, doc, updateDoc } from "firebase/firestore";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
-// 🔥 FIREBASE FUNCTIONS
-
-async function loadDB() {
-  const snapshot = await getDocs(collection(firestoreDB, "tournaments"));
-  let data = {};
-
-  snapshot.forEach((docSnap) => {
-    data[docSnap.id] = docSnap.data();
-  });
-
-  return data;
-}
-
-async function saveTournament(data) {
-  const docRef = await addDoc(collection(firestoreDB, "tournaments"), data);
-  return docRef.id;
-}
-
-async function updateTournament(id, data) {
-  const ref = doc(firestoreDB, "tournaments", id);
-  await updateDoc(ref, data);
-}
+const STORAGE_KEY = "carrom_master_v5";
+function loadDB() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; } }
+function saveDB(d) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} }
 
 const TEAM_EMOJIS = ["🔵","🔴","🟢","🟡","🟠","🟣"];
 const MEDALS = ["🥇","🥈","🥉","4️⃣","5️⃣","6️⃣"];
@@ -342,17 +321,7 @@ function getPlayerStats(t) {
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const [db, setDb] = useState({});
-
- useEffect(() => {
-  async function fetchData() {
-    const data = await loadDB();
-    console.log("🔥 FINAL DATA:", data);
-    setDb(data);
-  }
-  fetchData();
-}, []);
-
+  const [db, setDb] = useState(()=>loadDB());
   const [view, setView] = useState("home");
   const [activeTid, setActiveTid] = useState(null);
   const [winner, setWinner] = useState(null);
@@ -367,6 +336,7 @@ export default function App() {
   const [notes, setNotes] = useState([]);
   const [noteInput, setNoteInput] = useState("");
 
+  const persist = nd => { setDb(nd); saveDB(nd); };
   const tournaments = Object.values(db);
   const at = db[activeTid]; // active tournament
   const ppw = winsRequired > 0 ? Math.round(totalPoints / winsRequired) : 0;
@@ -404,42 +374,19 @@ export default function App() {
     return true;
   };
 
-async function createTournament() {
-  const t = {
-    id: uid(),
-    name: tName.trim(),
-    winsRequired,
-    totalPoints,
-    pointsPerWin: ppw,
-    teams: cTeams.map((t, i) => ({
-      ...t,
-      wins: 0,
-      losses: 0,
-      points: 0,
-      emoji: TEAM_EMOJIS[i],
-      color: TEAM_COLORS[i],
-      bg: TEAM_BG[i],
-    })),
-    history: [],
-    notes,
-    status: "active",
-    createdAt: Date.now(),
-    winnerId: null,
-    matchCount: 0,
-  };
-
-  const docRef = await addDoc(collection(firestoreDB, "tournaments"), t);
-
-  setDb((prev) => ({
-    ...prev,
-    [docRef.id]: t,
-  }));
-
-  openT(docRef.id);
-}
+  function createTournament() {
+    const t = {
+      id:uid(), name:tName.trim(), winsRequired, totalPoints, pointsPerWin:ppw,
+      teams:cTeams.map((t,i)=>({...t,wins:0,losses:0,points:0,emoji:TEAM_EMOJIS[i],color:TEAM_COLORS[i],bg:TEAM_BG[i]})),
+      history:[], notes, status:"active", createdAt:Date.now(), winnerId:null, matchCount:0,
+    };
+    const nd={...db,[t.id]:t};
+    persist(nd);
+    openT(t.id);
+  }
 
   // record match with players
-  async function recordMatch(t, winnerTeamId, loserTeamId, t0Players, t1Players) {
+  function recordMatch(t, winnerTeamId, loserTeamId, t0Players, t1Players) {
     const nt = {...t};
     nt.matchCount=(nt.matchCount||0)+1;
     const t0Id=nt.teams[0].id, t1Id=nt.teams[1].id;
@@ -458,15 +405,10 @@ async function createTournament() {
     });
     const winTeam=nt.teams.find(tm=>tm.id===winnerTeamId);
     if(winTeam&&winTeam.wins>=nt.winsRequired){nt.status="completed";nt.winnerId=winnerTeamId;setWinner(winTeam);}
-   await updateTournament(nt.id, nt);
-
-setDb((prev) => ({
-  ...prev,
-  [nt.id]: nt,
-}));
+    persist({...db,[nt.id]:nt});
   }
 
-  async function undoMatch() {
+  function undoMatch() {
     const t={...at};
     if(!t.history||!t.history.length) return;
     const last=t.history[t.history.length-1];
@@ -478,12 +420,7 @@ setDb((prev) => ({
       if(tm.id===last.loserId) return {...tm,losses:Math.max(0,tm.losses-1)};
       return tm;
     });
-    await updateTournament(t.id, t);
-
-setDb((prev) => ({
-  ...prev,
-  [t.id]: t,
-}));
+    persist({...db,[t.id]:t});
     setWinner(null);
   }
 
