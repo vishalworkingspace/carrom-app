@@ -1,9 +1,22 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
+
+// Aapka Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyC43NkBBH3JP97DRnPR3xHxwrYLNgZ8Dzg",
+  authDomain: "carrom-master-33ae8.firebaseapp.com",
+  projectId: "carrom-master-33ae8",
+  storageBucket: "carrom-master-33ae8.firebasestorage.app",
+  messagingSenderId: "285779539325",
+  appId: "1:285779539325:web:ab76dc01d7b4d6edba0814"
+};
+
+// Firebase Initialize (db ka naam firestoreDB rakha hai taki conflict na ho)
+const app = initializeApp(firebaseConfig);
+const firestoreDB = getFirestore(app);
 
 const uid = () => Math.random().toString(36).slice(2, 9);
-const STORAGE_KEY = "carrom_master_v5";
-function loadDB() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; } }
-function saveDB(d) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} }
 
 const TEAM_EMOJIS = ["🔵","🔴","🟢","🟡","🟠","🟣"];
 const MEDALS = ["🥇","🥈","🥉","4️⃣","5️⃣","6️⃣"];
@@ -301,7 +314,6 @@ function Confetti() {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function getPlayerStats(t) {
-  // Returns { [playerId]: { matchesPlayed, wins, losses, groups: [{matchNum, partnerId, opponentIds, won}] }}
   const stats = {};
   t.teams.forEach(tm => tm.players.forEach(p => {
     stats[p.id] = { matchesPlayed:0, wins:0, losses:0, teamId:tm.id, name:p.name, matches:[] };
@@ -321,10 +333,11 @@ function getPlayerStats(t) {
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const [db, setDb] = useState(()=>loadDB());
+  const [db, setDb] = useState({});
   const [view, setView] = useState("home");
   const [activeTid, setActiveTid] = useState(null);
   const [winner, setWinner] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // create wizard
   const [step, setStep] = useState(0);
@@ -336,9 +349,38 @@ export default function App() {
   const [notes, setNotes] = useState([]);
   const [noteInput, setNoteInput] = useState("");
 
-  const persist = nd => { setDb(nd); saveDB(nd); };
+  // Firebase Real-time Sync (Live update sabke liye)
+  useEffect(() => {
+    const docRef = doc(firestoreDB, "tournaments", "global_data");
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setDb(docSnap.data());
+      } else {
+        setDb({});
+      }
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Firebase Sync Error:", error);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Firebase Save Function
+  const persist = async (nd) => {
+    setDb(nd); // UI ko turant update karo bina delay
+    try {
+      const docRef = doc(firestoreDB, "tournaments", "global_data");
+      await setDoc(docRef, nd);
+    } catch (error) {
+      console.error("Firebase save failed:", error);
+      alert("Data save karne me problem aayi. Please check console.");
+    }
+  };
+
   const tournaments = Object.values(db);
-  const at = db[activeTid]; // active tournament
+  const at = db[activeTid]; 
   const ppw = winsRequired > 0 ? Math.round(totalPoints / winsRequired) : 0;
 
   function goHome() { setView("home"); setActiveTid(null); setWinner(null); }
@@ -385,12 +427,9 @@ export default function App() {
     openT(t.id);
   }
 
-  // record match with players
   function recordMatch(t, winnerTeamId, loserTeamId, t0Players, t1Players) {
     const nt = {...t};
     nt.matchCount=(nt.matchCount||0)+1;
-    const t0Id=nt.teams[0].id, t1Id=nt.teams[1].id;
-    // for 2+ teams, winner/loser already set
     const actualT0P = t0Players||[];
     const actualT1P = t1Players||[];
     nt.history=[...(nt.history||[]),{
@@ -424,13 +463,11 @@ export default function App() {
     setWinner(null);
   }
 
-  // update tournament's notes live
   function updateNotes(tid, newNotes) {
     const nt={...db[tid],notes:newNotes};
     persist({...db,[tid]:nt});
   }
 
-  // update tournament's team players live
   function updateTeamPlayers(tid, teamId, newPlayers) {
     const t={...db[tid]};
     t.teams=t.teams.map(tm=>tm.id===teamId?{...tm,players:newPlayers}:tm);
@@ -440,6 +477,10 @@ export default function App() {
   function deleteT(id) {
     const nd={...db}; delete nd[id]; persist(nd);
     if(activeTid===id) goHome();
+  }
+
+  if (isLoading) {
+    return <div style={{display:"flex", height:"100vh", alignItems:"center", justifyContent:"center", fontFamily:"sans-serif"}}>Loading Tournament Data...</div>;
   }
 
   return (
@@ -604,7 +645,6 @@ function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCoun
         ))}
       </div>
       <div className="card">
-        {/* Step 0: Teams + Players */}
         {step===0&&(
           <>
             <div className="fw-7 fd mb-4" style={{fontSize:18}}>🏆 Tournament & Teams</div>
@@ -618,7 +658,6 @@ function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCoun
                 {[2,3,4,5,6].map(n=><option key={n} value={n}>{n} Teams</option>)}
               </select>
             </div>
-            {/* Team tabs */}
             <div className="form-label mb-2">Team Names & Players</div>
             <div className="tabs mb-3">
               {cTeams.map((t,i)=>(
@@ -657,7 +696,6 @@ function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCoun
             })()}
           </>
         )}
-        {/* Step 1: Scoring */}
         {step===1&&(
           <>
             <div className="fw-7 fd mb-4" style={{fontSize:18}}>⚙️ Scoring Settings</div>
@@ -682,7 +720,6 @@ function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCoun
             </div>
           </>
         )}
-        {/* Step 2: Notes */}
         {step===2&&(
           <>
             <div className="fw-7 fd mb-1" style={{fontSize:18}}>📋 Tournament Notes</div>
@@ -767,7 +804,6 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
 
   return (
     <>
-      {/* Stats */}
       <div className="stat-grid mb-4">
         {[
           {label:"Matches",val:totalMatches,style:{}},
@@ -782,7 +818,6 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
         ))}
       </div>
 
-      {/* Race */}
       <div className="race-track">
         <div className="fw-7 mb-3" style={{fontSize:14}}>🏁 Race to {t.winsRequired} Wins — tap team to see details</div>
         {sorted.map((team,i)=>{
@@ -817,7 +852,6 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
         })}
       </div>
 
-      {/* Record match */}
       {!isCompleted&&(
         <div className="match-record-box">
           <div className="match-title">🎯 Match #{totalMatches+1} — Who Won?</div>
@@ -884,15 +918,12 @@ function PlayerSelectModal({t,onConfirm,onClose}) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-box" onClick={e=>e.stopPropagation()} style={{width:"100%",boxSizing:"border-box"}}>
         <div className="modal-handle"/>
-
-        {/* Title */}
         <div style={{textAlign:"center",marginBottom:20}}>
           <div style={{fontSize:28,marginBottom:4}}>🎯</div>
           <div className="fd fw-7" style={{fontSize:18,color:"var(--brown)"}}>Match #{(t.matchCount||0)+1}</div>
           <div className="text-xs text-muted" style={{marginTop:2}}>Select players & pick the winner</div>
         </div>
 
-        {/* Players who played — stacked per team */}
         {hasAnyPlayers&&(
           <div style={{marginBottom:16}}>
             <div style={{fontSize:11,fontWeight:700,color:"var(--slate-l)",letterSpacing:".6px",textTransform:"uppercase",marginBottom:10}}>
@@ -928,7 +959,6 @@ function PlayerSelectModal({t,onConfirm,onClose}) {
           </div>
         )}
 
-        {/* Who won */}
         <div style={{fontSize:11,fontWeight:700,color:"var(--slate-l)",letterSpacing:".6px",textTransform:"uppercase",marginBottom:12}}>
           Who Won This Match? *
         </div>
@@ -958,7 +988,6 @@ function PlayerSelectModal({t,onConfirm,onClose}) {
           })}
         </div>
 
-        {/* Actions */}
         <div style={{display:"flex",gap:10}}>
           <button className="btn btn-secondary" style={{flex:1}} onClick={onClose}>Cancel</button>
           <button className="btn btn-primary btn-lg" style={{flex:2}} disabled={!winner} onClick={doConfirm}>
@@ -1001,7 +1030,6 @@ function TeamsTab({t,onTeamClick,onUpdatePlayers}) {
               <div className="pf pf-gold" style={{width:`${Math.min(100,(team.wins/t.winsRequired)*100)}%`}}/>
             </div>
 
-            {/* Players list */}
             <div className="flex-between mb-2">
               <div className="text-sm fw-7">Players</div>
               <button className="btn btn-secondary btn-xs" onClick={()=>setEditingTeam(editingTeam===team.id?null:team.id)}>
@@ -1062,15 +1090,12 @@ function EditPlayerSection({team,onUpdate}) {
 function TeamPopup({team,t,onClose}) {
   const pStats=getPlayerStats(t);
   const history=t.history||[];
-
-  // Group matches that involved THIS team's players
   const teamMatches=history.filter(h=>h.winnerId===team.id||h.loserId===team.id);
 
   return (
     <div className="modal-overlay center" onClick={onClose}>
       <div className="modal-box center-box" style={{position:"relative"}} onClick={e=>e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>✕</button>
-        {/* Header */}
         <div className="team-popup-header" style={{background:`linear-gradient(135deg,${team.bg},${team.color}22)`}}>
           <span className="team-popup-emoji">{team.emoji}</span>
           <div className="fw-7 fd" style={{fontSize:22,color:team.color}}>{team.name}</div>
@@ -1081,7 +1106,6 @@ function TeamPopup({team,t,onClose}) {
           <div className="text-xs text-muted mt-1">{team.wins}/{t.winsRequired} wins to championship</div>
         </div>
 
-        {/* Player Stats */}
         <div className="fw-7 mb-3" style={{fontSize:14}}>👤 Player Statistics</div>
         {team.players.length===0&&<div className="text-sm text-muted mb-4">No players added to this team.</div>}
         {team.players.map(p=>{
@@ -1100,7 +1124,6 @@ function TeamPopup({team,t,onClose}) {
           );
         })}
 
-        {/* Match Groups */}
         {teamMatches.length>0&&(
           <>
             <div className="divider"/>
