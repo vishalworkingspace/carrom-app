@@ -1,9 +1,30 @@
 import { useState, useEffect, useRef } from "react";
+import { db } from "./firebase";
+import { collection, addDoc, getDocs, doc, updateDoc } from "firebase/firestore";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
-const STORAGE_KEY = "carrom_master_v5";
-function loadDB() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; } }
-function saveDB(d) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} }
+// 🔥 FIREBASE FUNCTIONS
+
+async function loadDB() {
+  const snapshot = await getDocs(collection(db, "tournaments"));
+  let data = {};
+
+  snapshot.forEach((docSnap) => {
+    data[docSnap.id] = docSnap.data();
+  });
+
+  return data;
+}
+
+async function saveTournament(data) {
+  const docRef = await addDoc(collection(db, "tournaments"), data);
+  return docRef.id;
+}
+
+async function updateTournament(id, data) {
+  const ref = doc(db, "tournaments", id);
+  await updateDoc(ref, data);
+}
 
 const TEAM_EMOJIS = ["🔵","🔴","🟢","🟡","🟠","🟣"];
 const MEDALS = ["🥇","🥈","🥉","4️⃣","5️⃣","6️⃣"];
@@ -321,7 +342,12 @@ function getPlayerStats(t) {
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const [db, setDb] = useState(()=>loadDB());
+  const [db, setDb] = useState({});
+
+  useEffect(() => {
+    loadDB().then(setDb);
+  }, []);
+
   const [view, setView] = useState("home");
   const [activeTid, setActiveTid] = useState(null);
   const [winner, setWinner] = useState(null);
@@ -336,7 +362,15 @@ export default function App() {
   const [notes, setNotes] = useState([]);
   const [noteInput, setNoteInput] = useState("");
 
-  const persist = nd => { setDb(nd); saveDB(nd); };
+  const persist = async (nd) => {
+  setDb(nd);
+
+  const ids = Object.keys(nd);
+  for (let id of ids) {
+    await updateTournament(id, nd[id]);
+  }
+};
+
   const tournaments = Object.values(db);
   const at = db[activeTid]; // active tournament
   const ppw = winsRequired > 0 ? Math.round(totalPoints / winsRequired) : 0;
@@ -374,15 +408,15 @@ export default function App() {
     return true;
   };
 
-  function createTournament() {
+  async function createTournament() {
     const t = {
       id:uid(), name:tName.trim(), winsRequired, totalPoints, pointsPerWin:ppw,
       teams:cTeams.map((t,i)=>({...t,wins:0,losses:0,points:0,emoji:TEAM_EMOJIS[i],color:TEAM_COLORS[i],bg:TEAM_BG[i]})),
       history:[], notes, status:"active", createdAt:Date.now(), winnerId:null, matchCount:0,
     };
-    const nd={...db,[t.id]:t};
-    persist(nd);
-    openT(t.id);
+    const id = await saveTournament(t);
+setDb(prev => ({ ...prev, [id]: t }));
+openT(id);
   }
 
   // record match with players
