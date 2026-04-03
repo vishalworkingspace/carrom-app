@@ -158,14 +158,14 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .player-section-title{font-size:12px;font-weight:700;color:var(--slate-l);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
 
 /* MODAL / POPUP */
-.modal-overlay{position:fixed;inset:0;background:rgba(30,20,10,.7);z-index:500;display:flex;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(4px)}
-.modal-overlay.center{align-items:center;padding:20px}
-.modal-box{background:var(--white);border-radius:24px 24px 0 0;padding:24px 20px;width:100%;max-width:520px;max-height:92svh;overflow-y:auto;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1)}
-.modal-box.center-box{border-radius:24px;animation:popIn .35s cubic-bezier(.34,1.56,.64,1);max-height:88svh}
+.modal-overlay{position:fixed;inset:0;background:rgba(30,20,10,.75);z-index:500;display:flex;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(4px);overflow:hidden}
+.modal-overlay.center{align-items:center;padding:16px}
+.modal-box{background:var(--white);border-radius:24px 24px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;max-height:90svh;overflow-y:auto;overflow-x:hidden;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1);box-sizing:border-box}
+.modal-box.center-box{border-radius:20px;animation:popIn .35s cubic-bezier(.34,1.56,.64,1);max-height:88svh;padding:20px 16px}
 @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes popIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
-.modal-handle{width:40px;height:4px;background:#e0d5c5;border-radius:2px;margin:0 auto 18px}
-.modal-title{font-family:var(--fd);font-size:20px;font-weight:900;color:var(--brown);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.modal-handle{width:36px;height:4px;background:#e0d5c5;border-radius:2px;margin:0 auto 16px}
+.modal-title{font-family:var(--fd);font-size:18px;font-weight:900;color:var(--brown);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .modal-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:none;background:var(--warm);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--brown)}
 
 /* STAT GRID */
@@ -864,75 +864,106 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
 
 // ─── Player Select Modal ──────────────────────────────────────────────────────
 function PlayerSelectModal({t,onConfirm,onClose}) {
-  const [t0Players,setT0Players]=useState([]); // selected player ids from team 0
-  const [t1Players,setT1Players]=useState([]); // selected player ids from team 1
-  const [winner,setWinner]=useState(null); // team id
+  const [t0Players,setT0Players]=useState([]);
+  const [t1Players,setT1Players]=useState([]);
+  const [winner,setWinner]=useState(null);
   const team0=t.teams[0], team1=t.teams[1];
-  const hasPlayers0=team0?.players?.length>0;
-  const hasPlayers1=team1?.players?.length>0;
+  const hasAnyPlayers=(team0?.players?.length>0)||(team1?.players?.length>0);
 
   function toggleP(teamIdx,pid) {
     if(teamIdx===0) setT0Players(p=>p.includes(pid)?p.filter(x=>x!==pid):[...p,pid]);
     else setT1Players(p=>p.includes(pid)?p.filter(x=>x!==pid):[...p,pid]);
   }
 
-  function canConfirm() { return winner!==null; }
-
-  function confirm() {
+  function doConfirm() {
     const loserId=winner===team0.id?team1.id:team0.id;
     onConfirm(winner,loserId,t0Players,t1Players);
   }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={e=>e.stopPropagation()}>
+      <div className="modal-box" onClick={e=>e.stopPropagation()} style={{width:"100%",boxSizing:"border-box"}}>
         <div className="modal-handle"/>
-        <div className="modal-title">🎯 Record Match #{(t.matchCount||0)+1}</div>
 
-        {/* Player selection */}
-        {(hasPlayers0||hasPlayers1)&&(
-          <>
-            <div className="text-sm fw-7 mb-3" style={{color:"var(--slate-l)"}}>SELECT PLAYERS WHO PLAYED (Optional)</div>
-            <div className="form-row mb-4">
-              {[team0,team1].map((team,ti)=>(
-                <div key={team.id}>
-                  <div className="player-section-title"><span>{team.emoji}</span>{team.name}</div>
-                  {team.players.length===0
-                    ?<div className="text-xs text-muted">No players added</div>
-                    :team.players.map(p=>(
-                      <button key={p.id}
-                        className={`player-select-btn btn-full mb-1 ${(ti===0?t0Players:t1Players).includes(p.id)?"selected":""}`}
-                        onClick={()=>toggleP(ti,p.id)}>
-                        👤 {p.name}
-                      </button>
-                    ))
-                  }
-                </div>
-              ))}
-            </div>
-            <div className="divider"/>
-          </>
-        )}
-
-        {/* Winner selection */}
-        <div className="text-sm fw-7 mb-3" style={{color:"var(--slate-l)"}}>WHO WON THIS MATCH? *</div>
-        <div className="form-row mb-4">
-          {[team0,team1].map(team=>(
-            <button key={team.id}
-              className={`match-team-btn ${winner===team.id?"winner-btn":""}`}
-              style={{borderColor:winner===team.id?team.color:undefined,background:winner===team.id?team.bg:undefined}}
-              onClick={()=>setWinner(team.id)}>
-              <span className="match-team-emoji">{team.emoji}</span>
-              <span className="match-team-name">{team.name}</span>
-              <span className="match-team-wins">{team.wins} wins</span>
-              {winner===team.id&&<span style={{fontSize:18,marginTop:4,display:"block"}}>✅</span>}
-            </button>
-          ))}
+        {/* Title */}
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{fontSize:28,marginBottom:4}}>🎯</div>
+          <div className="fd fw-7" style={{fontSize:18,color:"var(--brown)"}}>Match #{(t.matchCount||0)+1}</div>
+          <div className="text-xs text-muted" style={{marginTop:2}}>Select players & pick the winner</div>
         </div>
 
-        <div className="flex-between gap-2">
-          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary btn-lg" disabled={!canConfirm()} onClick={confirm}>✅ Confirm Win</button>
+        {/* Players who played — stacked per team */}
+        {hasAnyPlayers&&(
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:11,fontWeight:700,color:"var(--slate-l)",letterSpacing:".6px",textTransform:"uppercase",marginBottom:10}}>
+              Who Played? (Optional)
+            </div>
+            {[team0,team1].map((team,ti)=>{
+              if(!team||team.players.length===0) return null;
+              const sel = ti===0?t0Players:t1Players;
+              return (
+                <div key={team.id} style={{marginBottom:12}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
+                    <span style={{fontSize:16}}>{team.emoji}</span>
+                    <span style={{fontSize:13,fontWeight:700,color:team.color}}>{team.name}</span>
+                  </div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                    {team.players.map(p=>{
+                      const isSelected=sel.includes(p.id);
+                      return (
+                        <button key={p.id} onClick={()=>toggleP(ti,p.id)}
+                          style={{padding:"6px 14px",borderRadius:20,border:`2px solid ${isSelected?team.color:"#e5e7eb"}`,
+                            background:isSelected?team.bg:"var(--white)",color:isSelected?team.color:"var(--brown)",
+                            fontSize:13,fontWeight:600,fontFamily:"var(--fb)",cursor:"pointer",
+                            transition:"all .15s",WebkitTapHighlightColor:"transparent"}}>
+                          {isSelected?"✓ ":""}{p.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+            <div className="divider"/>
+          </div>
+        )}
+
+        {/* Who won */}
+        <div style={{fontSize:11,fontWeight:700,color:"var(--slate-l)",letterSpacing:".6px",textTransform:"uppercase",marginBottom:12}}>
+          Who Won This Match? *
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:20}}>
+          {[team0,team1].map(team=>{
+            const isWinner=winner===team.id;
+            return (
+              <button key={team.id} onClick={()=>setWinner(team.id)}
+                style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",
+                  borderRadius:14,border:`2px solid ${isWinner?team.color:"#e5e7eb"}`,
+                  background:isWinner?team.bg:"var(--white)",cursor:"pointer",
+                  textAlign:"left",width:"100%",fontFamily:"var(--fb)",
+                  transition:"all .2s",WebkitTapHighlightColor:"transparent",
+                  boxShadow:isWinner?`0 4px 16px ${team.color}33`:"none"}}>
+                <span style={{fontSize:30,flexShrink:0}}>{team.emoji}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:700,fontSize:15,color:isWinner?team.color:"var(--brown)",marginBottom:2}}>{team.name}</div>
+                  <div style={{fontSize:12,color:"var(--slate-l)"}}>{team.wins} wins so far</div>
+                </div>
+                <div style={{width:28,height:28,borderRadius:"50%",flexShrink:0,
+                  background:isWinner?team.color:"#f0ebe0",display:"flex",alignItems:"center",
+                  justifyContent:"center",fontSize:14,color:"white",transition:"all .2s"}}>
+                  {isWinner?"✓":""}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Actions */}
+        <div style={{display:"flex",gap:10}}>
+          <button className="btn btn-secondary" style={{flex:1}} onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary btn-lg" style={{flex:2}} disabled={!winner} onClick={doConfirm}>
+            ✅ Confirm Win
+          </button>
         </div>
       </div>
     </div>
