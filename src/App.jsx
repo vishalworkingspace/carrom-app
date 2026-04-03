@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { db } from "./firebase";
+import { db as firestoreDB } from "./firebase";
 import { collection, addDoc, getDocs, doc, updateDoc } from "firebase/firestore";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 // 🔥 FIREBASE FUNCTIONS
 
 async function loadDB() {
-  const snapshot = await getDocs(collection(db, "tournaments"));
+  const snapshot = await getDocs(collection(firestoreDB, "tournaments"));
   let data = {};
 
   snapshot.forEach((docSnap) => {
@@ -17,12 +17,12 @@ async function loadDB() {
 }
 
 async function saveTournament(data) {
-  const docRef = await addDoc(collection(db, "tournaments"), data);
+  const docRef = await addDoc(collection(firestoreDB, "tournaments"), data);
   return docRef.id;
 }
 
 async function updateTournament(id, data) {
-  const ref = doc(db, "tournaments", id);
+  const ref = doc(firestoreDB, "tournaments", id);
   await updateDoc(ref, data);
 }
 
