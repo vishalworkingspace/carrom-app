@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 
-// Aapka Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyC43NkBBH3JP97DRnPR3xHxwrYLNgZ8Dzg",
   authDomain: "carrom-master-33ae8.firebaseapp.com",
@@ -12,7 +11,6 @@ const firebaseConfig = {
   appId: "1:285779539325:web:ab76dc01d7b4d6edba0814"
 };
 
-// Firebase Initialize (db ka naam firestoreDB rakha hai taki conflict na ho)
 const app = initializeApp(firebaseConfig);
 const firestoreDB = getFirestore(app);
 
@@ -37,13 +35,11 @@ html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
 }
 body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height:100vh;overflow-x:hidden}
 
-/* NAV */
 .nav{background:var(--white);border-bottom:2px solid var(--warm);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(92,61,30,.08)}
 .nav-logo{font-family:var(--fd);font-size:18px;color:var(--brown);font-weight:900;cursor:pointer;display:flex;align-items:center;gap:8px;flex-shrink:0;user-select:none}
 .nav-logo .logo-icon{font-size:24px}
 .nav-actions{display:flex;gap:6px;flex-wrap:nowrap;align-items:center}
 
-/* BUTTONS */
 .btn{font-family:var(--fb);font-weight:600;font-size:14px;border:none;border-radius:10px;padding:9px 16px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;gap:5px;line-height:1;text-align:center;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .btn-primary{background:var(--gold);color:var(--white)}
 .btn-primary:hover,.btn-primary:active{background:var(--gold-d);transform:translateY(-1px);box-shadow:0 4px 16px rgba(201,151,63,.4)}
@@ -55,6 +51,8 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .btn-success:hover{background:#d8f3e3}
 .btn-ghost{background:transparent;color:var(--slate);border:1.5px solid #e0d5c5}
 .btn-ghost:hover{background:var(--warm)}
+.btn-clone{background:#f0f4ff;color:#3b5bdb;border:1.5px solid #c5d0f5}
+.btn-clone:hover{background:#e0e8ff}
 .btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
 .btn-xs{padding:4px 8px;font-size:11px;border-radius:6px}
 .btn-lg{padding:13px 28px;font-size:15px;border-radius:14px}
@@ -62,7 +60,6 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .btn-full{width:100%}
 .btn-icon{padding:8px;border-radius:8px;width:34px;height:34px}
 
-/* HERO */
 .hero{background:linear-gradient(150deg,#2a1005 0%,#5c2d0e 45%,#8a5a1e 80%,#c9973f 100%);min-height:calc(100svh - 58px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;position:relative;overflow:hidden}
 .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(201,151,63,.2),transparent 65%);pointer-events:none}
 .hero-disc{font-size:68px;margin-bottom:16px;animation:float 3s ease-in-out infinite;position:relative;filter:drop-shadow(0 8px 24px rgba(0,0,0,.4))}
@@ -77,11 +74,9 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .hero-stat strong{display:block;font-size:26px;font-weight:700;color:var(--gold-l);font-family:var(--fd)}
 .hero-stat span{font-size:12px;color:rgba(255,255,255,.6);font-weight:500}
 
-/* PAGE */
 .page{padding:24px 16px;max-width:880px;margin:0 auto;width:100%}
 .section-title{font-family:var(--fd);font-size:22px;font-weight:900;color:var(--brown);margin-bottom:18px}
 
-/* CARD */
 .card{background:var(--white);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);border:1.5px solid rgba(201,151,63,.1);transition:box-shadow .2s,transform .2s}
 .card-sm{padding:14px 16px}
 .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
@@ -89,7 +84,6 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .t-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
 .t-card-name{font-family:var(--fd);font-size:17px;font-weight:700;color:var(--brown);margin-bottom:3px}
 
-/* BADGE / CHIP */
 .badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px}
 .badge-live{background:#dcfce7;color:#166534}
 .badge-done{background:#fef9c3;color:#854d0e}
@@ -99,7 +93,6 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .chip-gold{background:#fef9c3;color:#854d0e}
 .chip-blue{background:#dbeafe;color:#1e40af}
 
-/* FORM */
 .form-group{margin-bottom:14px}
 .form-label{display:block;font-weight:600;font-size:13px;color:var(--brown);margin-bottom:5px}
 .form-input,.form-select{width:100%;font-family:var(--fb);font-size:15px;border:1.5px solid #ddd5c4;border-radius:10px;padding:10px 13px;color:var(--brown);background:var(--white);outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
@@ -110,7 +103,6 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .input-row{display:flex;gap:8px;align-items:stretch}
 .input-row .form-input{flex:1}
 
-/* STEPS */
 .steps{display:flex;margin-bottom:24px;gap:0}
 .step-item{flex:1;min-width:60px;display:flex;flex-direction:column;align-items:center;position:relative}
 .step-item:not(:last-child)::after{content:'';position:absolute;top:15px;left:55%;width:90%;height:2px;background:#e0d5c5;z-index:0}
@@ -120,13 +112,11 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .step-label{font-size:10px;color:var(--slate-l);font-weight:500;text-align:center;line-height:1.2}
 .step-item.active .step-label{color:var(--gold-d);font-weight:700}
 
-/* TABS */
 .tabs{display:flex;gap:3px;background:var(--warm);padding:3px;border-radius:12px;margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tab{padding:8px 14px;border-radius:9px;font-weight:600;font-size:13px;cursor:pointer;border:none;background:transparent;color:var(--slate);transition:all .2s;white-space:nowrap;font-family:var(--fb);-webkit-tap-highlight-color:transparent}
 .tab.active{background:var(--white);color:var(--brown);box-shadow:0 2px 8px rgba(92,61,30,.1)}
 
-/* PROGRESS */
 .progress-bar{height:10px;background:var(--warm);border-radius:5px;overflow:hidden}
 .progress-bar-sm{height:6px}
 .pf{height:100%;border-radius:5px;transition:width .7s cubic-bezier(.4,0,.2,1)}
@@ -135,7 +125,6 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .pf-red{background:linear-gradient(90deg,#dc2626,#f87171)}
 .pf-blue{background:linear-gradient(90deg,#2563eb,#60a5fa)}
 
-/* RACE TRACK */
 .race-track{background:var(--white);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);border:1.5px solid rgba(201,151,63,.12);margin-bottom:18px}
 .race-team{margin-bottom:14px;padding:12px 14px;border-radius:12px;border:1.5px solid #f0ebe0;transition:border-color .2s,background .2s;cursor:pointer}
 .race-team:last-child{margin-bottom:0}
@@ -151,7 +140,6 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .wins-pill.critical{background:#fee2e2;color:#991b1b;animation:pulse .8s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
 
-/* MATCH RECORD */
 .match-record-box{background:linear-gradient(135deg,var(--white),#fffdf8);border-radius:20px;padding:20px;box-shadow:var(--shadow-lg);border:2px solid rgba(201,151,63,.2);margin-bottom:18px}
 .match-title{font-size:13px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--slate-l);margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .match-teams-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-bottom:14px}
@@ -162,15 +150,29 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .match-team-wins{font-size:11px;color:var(--slate-l);display:block}
 .match-vs{display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--warm);border-radius:50%;font-weight:900;font-size:12px;color:var(--slate);margin:auto}
 
-/* PLAYER SELECT POPUP */
-.player-select-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
-.player-select-btn{padding:8px 12px;border-radius:10px;border:2px solid #e5e7eb;background:var(--white);cursor:pointer;text-align:center;transition:all .2s;font-family:var(--fb);font-size:13px;font-weight:600;color:var(--brown);-webkit-tap-highlight-color:transparent}
-.player-select-btn.selected{border-color:var(--green);background:#dcfce7;color:#166534}
-.player-select-btn:hover{border-color:var(--gold-l)}
-.player-select-section{margin-bottom:12px}
-.player-section-title{font-size:12px;font-weight:700;color:var(--slate-l);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+/* ── 3D SPHERE BALL ── */
+.sphere-ball{border-radius:50%;position:relative;flex-shrink:0}
+.sphere-ball::after{content:'';position:absolute;top:14%;left:22%;width:30%;height:20%;border-radius:50%;background:rgba(255,255,255,.55);filter:blur(3px);transform:rotate(-30deg)}
+.sphere-red{background:radial-gradient(circle at 35% 30%,#ff8fa3 0%,#ef4444 40%,#991b1b 80%,#450a0a 100%);box-shadow:inset -6px -6px 16px rgba(0,0,0,.45),inset 3px 3px 10px rgba(255,255,255,.35),0 8px 24px rgba(239,68,68,.45),0 2px 6px rgba(0,0,0,.3)}
+.sphere-blue{background:radial-gradient(circle at 35% 30%,#93c5fd 0%,#3b82f6 40%,#1e3a8a 80%,#0a0f2e 100%);box-shadow:inset -6px -6px 16px rgba(0,0,0,.45),inset 3px 3px 10px rgba(255,255,255,.35),0 8px 24px rgba(59,130,246,.45),0 2px 6px rgba(0,0,0,.3)}
+.sphere-green{background:radial-gradient(circle at 35% 30%,#86efac 0%,#22c55e 40%,#14532d 80%,#052e16 100%);box-shadow:inset -6px -6px 16px rgba(0,0,0,.45),inset 3px 3px 10px rgba(255,255,255,.35),0 8px 24px rgba(34,197,94,.45),0 2px 6px rgba(0,0,0,.3)}
+.sphere-yellow{background:radial-gradient(circle at 35% 30%,#fef08a 0%,#eab308 40%,#713f12 80%,#2a1600 100%);box-shadow:inset -6px -6px 16px rgba(0,0,0,.45),inset 3px 3px 10px rgba(255,255,255,.35),0 8px 24px rgba(234,179,8,.45),0 2px 6px rgba(0,0,0,.3)}
+.sphere-orange{background:radial-gradient(circle at 35% 30%,#fed7aa 0%,#f97316 40%,#7c2d12 80%,#1c0700 100%);box-shadow:inset -6px -6px 16px rgba(0,0,0,.45),inset 3px 3px 10px rgba(255,255,255,.35),0 8px 24px rgba(249,115,22,.45),0 2px 6px rgba(0,0,0,.3)}
+.sphere-purple{background:radial-gradient(circle at 35% 30%,#e9d5ff 0%,#a855f7 40%,#4a044e 80%,#12001a 100%);box-shadow:inset -6px -6px 16px rgba(0,0,0,.45),inset 3px 3px 10px rgba(255,255,255,.35),0 8px 24px rgba(168,85,247,.45),0 2px 6px rgba(0,0,0,.3)}
 
-/* MODAL / POPUP */
+/* ── HEADER STYLING ── */
+.t-header-name{font-family:var(--fd);font-size:26px;font-weight:900;color:var(--brown);line-height:1.1}
+.badge-live-pulse{background:#dcfce7;color:#166534;display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;animation:badgePulse 2s ease-in-out infinite}
+.badge-live-dot{width:7px;height:7px;background:#16a34a;border-radius:50%;animation:dotBlink 1.2s ease-in-out infinite}
+@keyframes badgePulse{0%,100%{box-shadow:0 0 0 0 rgba(22,101,52,.3)}50%{box-shadow:0 0 0 4px rgba(22,101,52,.0)}}
+@keyframes dotBlink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+
+/* ── TEAM POPUP HEADER ── */
+.team-popup-header{background:linear-gradient(135deg,var(--warm),#ede5d5);border-radius:16px;padding:20px;margin-bottom:16px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.team-popup-top{display:flex;align-items:center;gap:16px;width:100%;justify-content:center;margin-bottom:10px}
+.team-popup-name{font-family:var(--fd);font-size:24px;font-weight:900;line-height:1.1}
+.team-popup-sub{font-size:13px;color:var(--slate-l);font-weight:600;margin-top:4px}
+
 .modal-overlay{position:fixed;inset:0;background:rgba(30,20,10,.75);z-index:500;display:flex;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(4px);overflow:hidden}
 .modal-overlay.center{align-items:center;padding:16px}
 .modal-box{background:var(--white);border-radius:24px 24px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;max-height:90svh;overflow-y:auto;overflow-x:hidden;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1);box-sizing:border-box}
@@ -181,13 +183,11 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .modal-title{font-family:var(--fd);font-size:18px;font-weight:900;color:var(--brown);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .modal-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:none;background:var(--warm);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--brown)}
 
-/* STAT GRID */
 .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:18px}
 .stat-card{background:var(--white);border-radius:12px;padding:14px;box-shadow:var(--shadow);border:1.5px solid rgba(201,151,63,.1);text-align:center}
 .stat-num{font-family:var(--fb);font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1}
 .stat-label{font-size:10px;color:var(--slate-l);font-weight:700;margin-top:4px;text-transform:uppercase;letter-spacing:.6px}
 
-/* HISTORY */
 .hist-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #f5f0e8}
 .hist-item:last-child{border-bottom:none}
 .hist-num{font-size:11px;font-weight:700;color:var(--slate-l);min-width:26px;padding-top:2px}
@@ -195,24 +195,18 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .hist-players{font-size:13px;font-weight:600;color:var(--brown);margin-bottom:3px}
 .hist-result{display:flex;gap:6px;flex-wrap:wrap}
 
-/* TEAM POPUP */
-.team-popup-header{background:linear-gradient(135deg,var(--warm),#ede5d5);border-radius:16px;padding:20px;margin-bottom:16px;text-align:center}
-.team-popup-emoji{font-size:48px;margin-bottom:8px;display:block}
 .player-stat-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--warm)}
 .player-stat-row:last-child{border-bottom:none}
 .player-stat-name{font-weight:600;font-size:14px;color:var(--brown);display:flex;align-items:center;gap:6px}
 .player-stat-nums{display:flex;gap:8px;align-items:center}
 
-/* NOTE ITEMS */
 .note-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--warm)}
 .note-item:last-child{border-bottom:none}
 .note-num{font-family:var(--fd);font-size:15px;font-weight:700;color:var(--gold-d);min-width:22px;line-height:1.5}
 .note-text{flex:1;font-size:14px;color:var(--brown);line-height:1.5;word-break:break-word}
 
-/* PLAYER CHIP */
 .player-chip{display:inline-flex;align-items:center;gap:4px;border-radius:8px;padding:3px 9px;font-size:12px;font-weight:600;margin:2px}
 
-/* WINNER */
 .winner-overlay{position:fixed;inset:0;background:rgba(20,10,0,.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)}
 .winner-box{background:var(--white);border-radius:24px;padding:36px 24px;text-align:center;max-width:380px;width:100%;box-shadow:0 24px 80px rgba(92,61,30,.5);animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
 .winner-trophy{font-size:72px;display:block;margin-bottom:10px;animation:bounce 1s ease-in-out infinite}
@@ -220,34 +214,21 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .winner-title{font-family:var(--fd);font-size:32px;font-weight:900;color:var(--gold-d);margin-bottom:4px}
 .winner-team-name{font-size:22px;font-weight:700;margin-bottom:16px}
 
-/* CONFETTI */
 .confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999}
 
-/* MISC */
 .divider{height:1px;background:var(--warm);margin:16px 0}
 .flex-between{display:flex;align-items:center;justify-content:space-between}
 .flex-center{display:flex;align-items:center;justify-content:center}
-.flex-start{display:flex;align-items:flex-start}
 .gap-2{gap:8px}
-.gap-3{gap:12px}
-.mb-1{margin-bottom:4px}
-.mb-2{margin-bottom:8px}
-.mb-3{margin-bottom:12px}
-.mb-4{margin-bottom:16px}
-.mb-5{margin-bottom:20px}
-.mt-2{margin-top:8px}
-.mt-3{margin-top:12px}
-.text-sm{font-size:13px}
-.text-xs{font-size:11px}
-.text-muted{color:var(--slate-l)}
-.fw-7{font-weight:700}
-.fd{font-family:var(--fd)}
+.mb-1{margin-bottom:4px}.mb-2{margin-bottom:8px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}.mb-5{margin-bottom:20px}
+.mt-2{margin-top:8px}.mt-3{margin-top:12px}
+.text-sm{font-size:13px}.text-xs{font-size:11px}.text-muted{color:var(--slate-l)}
+.fw-7{font-weight:700}.fd{font-family:var(--fd)}
 .empty-state{text-align:center;padding:40px 20px;color:var(--slate-l)}
 .empty-icon{font-size:40px;margin-bottom:10px}
 .info-box{background:#fffbf0;border:1.5px solid var(--gold-l);border-radius:12px;padding:14px 16px}
 .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 
-/* RESPONSIVE */
 @media(max-width:500px){
   .form-row{grid-template-columns:1fr}
   .stat-grid{grid-template-columns:repeat(2,1fr)}
@@ -261,7 +242,6 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
   .tabs{border-radius:10px}
   .tab{padding:7px 10px;font-size:12px}
   .modal-box{padding:20px 16px}
-  .player-select-row{grid-template-columns:1fr 1fr}
   .hero-cta{padding:13px 28px;font-size:15px}
   .race-score{font-size:18px}
 }
@@ -280,6 +260,15 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
   .match-team-emoji{font-size:36px}
 }
 `;
+
+// ─── 3D Sphere Ball ───────────────────────────────────────────────────────────
+const SPHERE_CLASSES = ["sphere-blue","sphere-red","sphere-green","sphere-yellow","sphere-orange","sphere-purple"];
+function SphereBall({ index = 0, size = 56 }) {
+  return (
+    <div className={`sphere-ball ${SPHERE_CLASSES[index % SPHERE_CLASSES.length]}`}
+      style={{ width: size, height: size }} />
+  );
+}
 
 // ─── Confetti ─────────────────────────────────────────────────────────────────
 function Confetti() {
@@ -312,7 +301,7 @@ function Confetti() {
   return <canvas id="confetti-cv" className="confetti-canvas"/>;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function getPlayerStats(t) {
   const stats = {};
   t.teams.forEach(tm => tm.players.forEach(p => {
@@ -339,7 +328,6 @@ export default function App() {
   const [winner, setWinner] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // create wizard
   const [step, setStep] = useState(0);
   const [tName, setTName] = useState("");
   const [numTeams, setNumTeams] = useState(2);
@@ -349,38 +337,33 @@ export default function App() {
   const [notes, setNotes] = useState([]);
   const [noteInput, setNoteInput] = useState("");
 
-  // Firebase Real-time Sync (Live update sabke liye)
+  // Firebase Real-time Sync
   useEffect(() => {
     const docRef = doc(firestoreDB, "tournaments", "global_data");
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setDb(docSnap.data());
-      } else {
-        setDb({});
-      }
+      if (docSnap.exists()) setDb(docSnap.data());
+      else setDb({});
       setIsLoading(false);
     }, (error) => {
       console.error("Firebase Sync Error:", error);
       setIsLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
-  // Firebase Save Function
   const persist = async (nd) => {
-    setDb(nd); // UI ko turant update karo bina delay
+    setDb(nd);
     try {
       const docRef = doc(firestoreDB, "tournaments", "global_data");
       await setDoc(docRef, nd);
     } catch (error) {
       console.error("Firebase save failed:", error);
-      alert("Data save karne me problem aayi. Please check console.");
+      alert("Data save karne me problem aayi.");
     }
   };
 
   const tournaments = Object.values(db);
-  const at = db[activeTid]; 
+  const at = db[activeTid];
   const ppw = winsRequired > 0 ? Math.round(totalPoints / winsRequired) : 0;
 
   function goHome() { setView("home"); setActiveTid(null); setWinner(null); }
@@ -427,15 +410,38 @@ export default function App() {
     openT(t.id);
   }
 
+  // ── CLONE TOURNAMENT ───────────────────────────────────────────────────────
+  function cloneT(original) {
+    const cloned = {
+      ...original,
+      id: uid(),
+      name: original.name + " (Copy)",
+      status: "active",
+      winnerId: null,
+      matchCount: 0,
+      history: [],
+      createdAt: Date.now(),
+      teams: original.teams.map(tm => ({
+        ...tm,
+        id: uid(),
+        wins: 0,
+        losses: 0,
+        points: 0,
+        players: tm.players.map(p => ({ ...p, id: uid() })),
+      })),
+    };
+    const nd = { ...db, [cloned.id]: cloned };
+    persist(nd);
+    openT(cloned.id);
+  }
+
   function recordMatch(t, winnerTeamId, loserTeamId, t0Players, t1Players) {
     const nt = {...t};
     nt.matchCount=(nt.matchCount||0)+1;
-    const actualT0P = t0Players||[];
-    const actualT1P = t1Players||[];
     nt.history=[...(nt.history||[]),{
       matchNum:nt.matchCount, winnerId:winnerTeamId, loserId:loserTeamId,
       t0Id:nt.teams[0].id, t1Id:nt.teams[1]?.id,
-      t0Players:actualT0P, t1Players:actualT1P,
+      t0Players:t0Players||[], t1Players:t1Players||[],
     }];
     nt.teams=nt.teams.map(tm=>{
       if(tm.id===winnerTeamId) return {...tm,wins:tm.wins+1,points:tm.points+(nt.pointsPerWin||0)};
@@ -474,13 +480,31 @@ export default function App() {
     persist({...db,[tid]:t});
   }
 
+  // ── UPDATE SETTINGS (Name, Wins, Points) ───────────────────────────────────
+  function updateSettings(tid, newName, newWins, newPoints) {
+    const t = { ...db[tid] };
+    t.name = newName.trim() || t.name;
+    t.winsRequired = Math.max(1, parseInt(newWins) || t.winsRequired);
+    t.totalPoints = Math.max(1, parseInt(newPoints) || t.totalPoints);
+    t.pointsPerWin = t.winsRequired > 0 ? Math.round(t.totalPoints / t.winsRequired) : t.pointsPerWin;
+    // Recalculate team points based on current wins × new PPW
+    t.teams = t.teams.map(tm => ({ ...tm, points: tm.wins * t.pointsPerWin }));
+    persist({ ...db, [tid]: t });
+  }
+
   function deleteT(id) {
     const nd={...db}; delete nd[id]; persist(nd);
     if(activeTid===id) goHome();
   }
 
   if (isLoading) {
-    return <div style={{display:"flex", height:"100vh", alignItems:"center", justifyContent:"center", fontFamily:"sans-serif"}}>Loading Tournament Data...</div>;
+    return (
+      <div style={{display:"flex",height:"100vh",alignItems:"center",justifyContent:"center",
+        fontFamily:"sans-serif",flexDirection:"column",gap:12,color:"#5c3d1e"}}>
+        <div style={{fontSize:48,animation:"float 2s ease-in-out infinite"}}>🎯</div>
+        <div style={{fontWeight:700,fontSize:18}}>Loading Tournament Data…</div>
+      </div>
+    );
   }
 
   return (
@@ -497,8 +521,8 @@ export default function App() {
         </div>
       </nav>
 
-      {view==="home"&&<HeroPage onStart={startCreate} tournaments={tournaments} onOpen={openT}/>}
-      {view==="list"&&<TournamentList tournaments={tournaments} onOpen={openT} onCreate={startCreate} onDelete={deleteT}/>}
+      {view==="home"&&<HeroPage onStart={startCreate} tournaments={tournaments} onOpen={openT} onClone={cloneT}/>}
+      {view==="list"&&<TournamentList tournaments={tournaments} onOpen={openT} onCreate={startCreate} onDelete={deleteT} onClone={cloneT}/>}
       {view==="create"&&(
         <CreateWizard step={step} setStep={setStep} canNext={canNext}
           tName={tName} setTName={setTName}
@@ -517,6 +541,8 @@ export default function App() {
           onDelete={()=>deleteT(activeTid)} onBack={goHome}
           onUpdateNotes={(n)=>updateNotes(activeTid,n)}
           onUpdatePlayers={(teamId,players)=>updateTeamPlayers(activeTid,teamId,players)}
+          onUpdateSettings={(name,wins,pts)=>updateSettings(activeTid,name,wins,pts)}
+          onClone={()=>cloneT(at)}
         />
       )}
       {winner&&(<><Confetti/><WinnerBanner team={winner} onClose={()=>setWinner(null)}/></>)}
@@ -525,7 +551,7 @@ export default function App() {
 }
 
 // ─── Hero Page ────────────────────────────────────────────────────────────────
-function HeroPage({onStart,tournaments,onOpen}) {
+function HeroPage({onStart,tournaments,onOpen,onClone}) {
   const active=tournaments.filter(t=>t.status==="active");
   const done=tournaments.filter(t=>t.status==="completed");
   return (
@@ -541,32 +567,37 @@ function HeroPage({onStart,tournaments,onOpen}) {
           ))}
         </div>
       </div>
-      {active.length>0&&<div className="page"><h2 className="section-title">🟢 Active</h2><div className="card-grid">{active.map(t=><TCard key={t.id} t={t} onOpen={onOpen}/>)}</div></div>}
-      {done.length>0&&<div className="page" style={{paddingTop:0}}><h2 className="section-title">🏆 Completed</h2><div className="card-grid">{done.map(t=><TCard key={t.id} t={t} onOpen={onOpen}/>)}</div></div>}
+      {active.length>0&&<div className="page"><h2 className="section-title">🟢 Active</h2><div className="card-grid">{active.map(t=><TCard key={t.id} t={t} onOpen={onOpen} onClone={onClone}/>)}</div></div>}
+      {done.length>0&&<div className="page" style={{paddingTop:0}}><h2 className="section-title">🏆 Completed</h2><div className="card-grid">{done.map(t=><TCard key={t.id} t={t} onOpen={onOpen} onClone={onClone}/>)}</div></div>}
       {tournaments.length===0&&<div className="page"><div className="empty-state"><div className="empty-icon">🏟️</div><p style={{marginBottom:16}}>No tournaments yet.</p><button className="btn btn-primary btn-lg" onClick={onStart}>🚀 Get Started</button></div></div>}
     </>
   );
 }
 
-function TCard({t,onOpen}) {
+function TCard({t,onOpen,onClone}) {
   const leader=[...t.teams].sort((a,b)=>b.wins-a.wins)[0];
   return (
-    <div className="card t-card" onClick={()=>onOpen(t.id)}>
-      <div className="flex-between mb-2">
-        <div className="t-card-name">{t.name}</div>
-        <span className={`badge ${t.status==="active"?"badge-live":"badge-done"}`}>{t.status==="active"?"🟢 Live":"🏆 Done"}</span>
+    <div>
+      <div className="card t-card" onClick={()=>onOpen(t.id)}>
+        <div className="flex-between mb-2">
+          <div className="t-card-name">{t.name}</div>
+          <span className={`badge ${t.status==="active"?"badge-live":"badge-done"}`}>{t.status==="active"?"🟢 Live":"🏆 Done"}</span>
+        </div>
+        <div className="text-xs text-muted mb-3">{t.teams.length} teams · {t.winsRequired} wins needed · Match #{t.matchCount||0}</div>
+        {t.winnerId&&<div className="chip chip-gold mb-2">🏆 {t.teams.find(x=>x.id===t.winnerId)?.name} wins!</div>}
+        {leader&&!t.winnerId&&(
+          <>
+            <div className="flex-between mb-2">
+              <span className="text-sm fw-7">{leader.emoji} {leader.name}</span>
+              <span className="chip chip-gold">{leader.wins}/{t.winsRequired} W</span>
+            </div>
+            <div className="progress-bar"><div className="pf pf-gold" style={{width:`${Math.min(100,(leader.wins/t.winsRequired)*100)}%`}}/></div>
+          </>
+        )}
       </div>
-      <div className="text-xs text-muted mb-3">{t.teams.length} teams · {t.winsRequired} wins needed · Match #{t.matchCount||0}</div>
-      {t.winnerId&&<div className="chip chip-gold mb-2">🏆 {t.teams.find(x=>x.id===t.winnerId)?.name} wins!</div>}
-      {leader&&!t.winnerId&&(
-        <>
-          <div className="flex-between mb-2">
-            <span className="text-sm fw-7">{leader.emoji} {leader.name}</span>
-            <span className="chip chip-gold">{leader.wins}/{t.winsRequired} W</span>
-          </div>
-          <div className="progress-bar"><div className="pf pf-gold" style={{width:`${Math.min(100,(leader.wins/t.winsRequired)*100)}%`}}/></div>
-        </>
-      )}
+      <button className="btn btn-clone btn-sm btn-full mt-2" onClick={e=>{e.stopPropagation();onClone(t);}}>
+        📋 Clone Tournament
+      </button>
     </div>
   );
 }
@@ -589,7 +620,7 @@ function ConfirmModal({message, onYes, onNo}) {
 }
 
 // ─── Tournament List ──────────────────────────────────────────────────────────
-function TournamentList({tournaments,onOpen,onCreate,onDelete}) {
+function TournamentList({tournaments,onOpen,onCreate,onDelete,onClone}) {
   const [confirmId, setConfirmId] = useState(null);
   const confirmT = tournaments.find(t=>t.id===confirmId);
   return (
@@ -603,18 +634,16 @@ function TournamentList({tournaments,onOpen,onCreate,onDelete}) {
         :<div className="card-grid">
           {[...tournaments].sort((a,b)=>b.createdAt-a.createdAt).map(t=>(
             <div key={t.id}>
-              <TCard t={t} onOpen={onOpen}/>
+              <TCard t={t} onOpen={onOpen} onClone={onClone}/>
               <button className="btn btn-danger btn-sm btn-full mt-2" onClick={()=>setConfirmId(t.id)}>🗑 Delete</button>
             </div>
           ))}
         </div>
       }
       {confirmId&&confirmT&&(
-        <ConfirmModal
-          message={`Delete "${confirmT.name}"? This cannot be undone.`}
+        <ConfirmModal message={`Delete "${confirmT.name}"?`}
           onYes={()=>{onDelete(confirmId);setConfirmId(null);}}
-          onNo={()=>setConfirmId(null)}
-        />
+          onNo={()=>setConfirmId(null)}/>
       )}
     </div>
   );
@@ -627,10 +656,7 @@ function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCoun
   const [activeTeamTab,setActiveTeamTab]=useState(0);
   const [playerInputs,setPlayerInputs]=useState({});
 
-  function addNote() {
-    if(!noteInput.trim()) return;
-    setNotes(n=>[...n,noteInput.trim()]); setNoteInput("");
-  }
+  function addNote() { if(!noteInput.trim()) return; setNotes(n=>[...n,noteInput.trim()]); setNoteInput(""); }
   function deleteNote(i) { setNotes(n=>n.filter((_,j)=>j!==i)); }
 
   return (
@@ -681,7 +707,7 @@ function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCoun
                     {team.players.map((p,pi)=>(
                       <div key={p.id} className="flex-between mb-2">
                         <span className="text-sm" style={{padding:"8px 10px",background:TEAM_BG[ti],borderRadius:8,flex:1}}>👤 {p.name}</span>
-                        <button className="btn btn-danger btn-xs ml-2" style={{marginLeft:6}} onClick={()=>removeCPlayer(ti,pi)}>✕</button>
+                        <button className="btn btn-danger btn-xs" style={{marginLeft:6}} onClick={()=>removeCPlayer(ti,pi)}>✕</button>
                       </div>
                     ))}
                     <div className="input-row">
@@ -735,7 +761,7 @@ function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCoun
                 ))}
               </div>
             )}
-            {notes.length===0&&<div className="text-sm text-muted mb-3">No notes yet — add your first one below.</div>}
+            {notes.length===0&&<div className="text-sm text-muted mb-3">No notes yet.</div>}
             <div className="input-row">
               <input className="form-input" placeholder="Type a rule and press Add…" value={noteInput}
                 onChange={e=>setNoteInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")addNote();}}/>
@@ -757,23 +783,35 @@ function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCoun
 }
 
 // ─── Tournament View ──────────────────────────────────────────────────────────
-function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdatePlayers}) {
+function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdatePlayers,onUpdateSettings,onClone}) {
   const [tab,setTab]=useState("play");
   const [teamPopup,setTeamPopup]=useState(null);
   const [showDeleteConfirm,setShowDeleteConfirm]=useState(false);
+  const teamIndex = t.teams.findIndex(tm => tm.id === teamPopup?.id);
+
   return (
     <div className="page">
+      {/* ── Styled Header with Serif Bold + Pulsing Badge ── */}
       <div className="flex-between mb-4">
         <div>
           <button className="btn btn-ghost btn-sm mb-2" onClick={onBack}>← Back</button>
-          <h2 className="section-title mb-1">{t.name}</h2>
-          <span className={`badge ${t.status==="active"?"badge-live":"badge-done"}`}>{t.status==="active"?"🟢 Active":"🏆 Completed"}</span>
+          <h2 className="t-header-name">{t.name}</h2>
+          <div className="text-xs text-muted" style={{marginTop:4,marginBottom:6}}>
+            {t.teams.length} teams · {t.matchCount||0} matches played
+          </div>
+          {t.status==="active"
+            ? <span className="badge-live-pulse"><span className="badge-live-dot"/>Active</span>
+            : <span className="badge badge-done">🏆 Completed</span>
+          }
         </div>
-        <button className="btn btn-danger btn-sm btn-icon" title="Delete" onClick={()=>setShowDeleteConfirm(true)}>🗑</button>
+        <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end"}}>
+          <button className="btn btn-danger btn-sm btn-icon" title="Delete" onClick={()=>setShowDeleteConfirm(true)}>🗑</button>
+          <button className="btn btn-clone btn-sm" onClick={onClone}>📋 Clone</button>
+        </div>
       </div>
 
       <div className="tabs">
-        {[["play","🎮 Play"],["teams","👥 Teams"],["history","📜 History"],["notes","📋 Rules"]].map(([k,l])=>(
+        {[["play","🎮 Play"],["teams","👥 Teams"],["history","📜 History"],["notes","📋 Rules"],["settings","⚙️ Settings"]].map(([k,l])=>(
           <button key={k} className={`tab ${tab===k?"active":""}`} onClick={()=>setTab(k)}>{l}</button>
         ))}
       </div>
@@ -782,14 +820,13 @@ function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdate
       {tab==="teams"&&<TeamsTab t={t} onTeamClick={setTeamPopup} onUpdatePlayers={onUpdatePlayers}/>}
       {tab==="history"&&<HistoryTab t={t}/>}
       {tab==="notes"&&<NotesTab t={t} onUpdateNotes={onUpdateNotes}/>}
+      {tab==="settings"&&<SettingsTab t={t} onUpdateSettings={onUpdateSettings}/>}
 
-      {teamPopup&&<TeamPopup team={teamPopup} t={t} onClose={()=>setTeamPopup(null)}/>}
+      {teamPopup&&<TeamPopup team={teamPopup} t={t} teamIndex={teamIndex>=0?teamIndex:0} onClose={()=>setTeamPopup(null)}/>}
       {showDeleteConfirm&&(
-        <ConfirmModal
-          message={`Delete "${t.name}"? This cannot be undone.`}
+        <ConfirmModal message={`Delete "${t.name}"?`}
           onYes={()=>{setShowDeleteConfirm(false);onDelete();}}
-          onNo={()=>setShowDeleteConfirm(false)}
-        />
+          onNo={()=>setShowDeleteConfirm(false)}/>
       )}
     </div>
   );
@@ -819,7 +856,7 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
       </div>
 
       <div className="race-track">
-        <div className="fw-7 mb-3" style={{fontSize:14}}>🏁 Race to {t.winsRequired} Wins — tap team to see details</div>
+        <div className="fw-7 mb-3" style={{fontSize:14}}>🏁 Race to {t.winsRequired} Wins</div>
         {sorted.map((team,i)=>{
           const toGo=Math.max(0,t.winsRequired-team.wins);
           const isWinner=t.winnerId===team.id;
@@ -857,8 +894,7 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
           <div className="match-title">🎯 Match #{totalMatches+1} — Who Won?</div>
           <div className="match-teams-grid">
             {t.teams[0]&&(
-              <button className="match-team-btn" style={{borderColor:t.teams[0].color+"44",background:t.teams[0].bg}}
-                onClick={()=>setShowPlayerSelect(true)}>
+              <button className="match-team-btn" style={{borderColor:t.teams[0].color+"44",background:t.teams[0].bg}} onClick={()=>setShowPlayerSelect(true)}>
                 <span className="match-team-emoji">{t.teams[0].emoji}</span>
                 <span className="match-team-name">{t.teams[0].name}</span>
                 <span className="match-team-wins">{t.teams[0].wins} wins</span>
@@ -866,8 +902,7 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
             )}
             <div className="match-vs">VS</div>
             {t.teams[1]&&(
-              <button className="match-team-btn" style={{borderColor:t.teams[1].color+"44",background:t.teams[1].bg}}
-                onClick={()=>setShowPlayerSelect(true)}>
+              <button className="match-team-btn" style={{borderColor:t.teams[1].color+"44",background:t.teams[1].bg}} onClick={()=>setShowPlayerSelect(true)}>
                 <span className="match-team-emoji">{t.teams[1].emoji}</span>
                 <span className="match-team-name">{t.teams[1].name}</span>
                 <span className="match-team-wins">{t.teams[1].wins} wins</span>
@@ -921,7 +956,7 @@ function PlayerSelectModal({t,onConfirm,onClose}) {
         <div style={{textAlign:"center",marginBottom:20}}>
           <div style={{fontSize:28,marginBottom:4}}>🎯</div>
           <div className="fd fw-7" style={{fontSize:18,color:"var(--brown)"}}>Match #{(t.matchCount||0)+1}</div>
-          <div className="text-xs text-muted" style={{marginTop:2}}>Select players & pick the winner</div>
+          <div className="text-xs text-muted" style={{marginTop:2}}>Select players &amp; pick the winner</div>
         </div>
 
         {hasAnyPlayers&&(
@@ -999,6 +1034,72 @@ function PlayerSelectModal({t,onConfirm,onClose}) {
   );
 }
 
+// ─── Settings Tab (NEW — Edit Name, Wins, Points) ────────────────────────────
+function SettingsTab({t, onUpdateSettings}) {
+  const [name, setName] = useState(t.name);
+  const [wins, setWins] = useState(t.winsRequired);
+  const [points, setPoints] = useState(t.totalPoints);
+  const [saved, setSaved] = useState(false);
+
+  const previewPPW = wins > 0 ? Math.round(points / wins) : 0;
+
+  function save() {
+    onUpdateSettings(name, wins, points);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <div className="card">
+      <div className="fd fw-7 mb-4" style={{fontSize:18}}>⚙️ Edit Tournament Settings</div>
+
+      <div className="form-group">
+        <label className="form-label">Tournament Name</label>
+        <input className="form-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Tournament name"/>
+      </div>
+
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label">Wins Required</label>
+          <input className="form-input" type="number" min="1" max="999" value={wins}
+            onChange={e=>setWins(Math.max(1,parseInt(e.target.value)||1))}/>
+          <div className="form-hint">Matches needed to win</div>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Total Points Pool</label>
+          <input className="form-input" type="number" min="1" value={points}
+            onChange={e=>setPoints(Math.max(1,parseInt(e.target.value)||1))}/>
+          <div className="form-hint">Total points in pool</div>
+        </div>
+      </div>
+
+      <div className="info-box mb-4">
+        <div className="text-sm fw-7 mb-1">🧮 Preview:</div>
+        <div className="text-sm mb-1">Points per win = <strong>{points} ÷ {wins} = {previewPPW} pts</strong></div>
+        <div className="text-sm text-muted">Team points recalculate based on wins × new PPW.</div>
+      </div>
+
+      <button className={`btn ${saved?"btn-success":"btn-primary"} btn-full btn-lg`} onClick={save}>
+        {saved ? "✅ Saved!" : "💾 Save Changes"}
+      </button>
+
+      <div className="divider"/>
+      <div className="fw-7 mb-3" style={{fontSize:14}}>📊 Current Values</div>
+      {[
+        ["Matches Played", t.matchCount||0],
+        ["Current PPW", t.pointsPerWin+" pts"],
+        ["Teams", t.teams.length],
+        ["Status", t.status==="active"?"🟢 Active":"🏆 Completed"],
+      ].map(([l,v])=>(
+        <div key={l} className="flex-between" style={{padding:"8px 0",borderBottom:"1px solid var(--warm)"}}>
+          <span className="text-sm fw-7">{l}</span>
+          <span className="chip">{v}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Teams Tab ────────────────────────────────────────────────────────────────
 function TeamsTab({t,onTeamClick,onUpdatePlayers}) {
   const [editingTeam,setEditingTeam]=useState(null);
@@ -1015,9 +1116,9 @@ function TeamsTab({t,onTeamClick,onUpdatePlayers}) {
           <div key={team.id} className="card mb-3" style={{borderLeft:`4px solid ${team.color}`}}>
             <div className="flex-between mb-3">
               <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <div style={{width:40,height:40,borderRadius:12,background:team.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{team.emoji}</div>
+                <SphereBall index={i} size={40}/>
                 <div>
-                  <div className="fw-7" style={{fontSize:16}}>{MEDALS[i]||"🏅"} {team.name} {t.winnerId===team.id&&"🏆"}</div>
+                  <div className="fw-7 fd" style={{fontSize:16}}>{MEDALS[i]||"🏅"} {team.name} {t.winnerId===team.id&&"🏆"}</div>
                   <div className="text-xs text-muted">{team.players.length} players · {team.wins}W · {team.losses}L</div>
                 </div>
               </div>
@@ -1029,7 +1130,6 @@ function TeamsTab({t,onTeamClick,onUpdatePlayers}) {
             <div className="progress-bar mb-3 progress-bar-sm">
               <div className="pf pf-gold" style={{width:`${Math.min(100,(team.wins/t.winsRequired)*100)}%`}}/>
             </div>
-
             <div className="flex-between mb-2">
               <div className="text-sm fw-7">Players</div>
               <button className="btn btn-secondary btn-xs" onClick={()=>setEditingTeam(editingTeam===team.id?null:team.id)}>
@@ -1048,9 +1148,7 @@ function TeamsTab({t,onTeamClick,onUpdatePlayers}) {
                 );
               })}
             </div>
-
             {editingTeam===team.id&&<EditPlayerSection team={team} onUpdate={(players)=>onUpdatePlayers(team.id,players)}/>}
-
             <div className="flex-between mt-2">
               <button className="btn btn-secondary btn-sm" onClick={()=>onTeamClick(team)}>📊 Player Stats →</button>
             </div>
@@ -1063,11 +1161,7 @@ function TeamsTab({t,onTeamClick,onUpdatePlayers}) {
 
 function EditPlayerSection({team,onUpdate}) {
   const [input,setInput]=useState("");
-  function add() {
-    if(!input.trim()) return;
-    onUpdate([...team.players,{id:uid(),name:input.trim()}]);
-    setInput("");
-  }
+  function add() { if(!input.trim()) return; onUpdate([...team.players,{id:uid(),name:input.trim()}]); setInput(""); }
   function remove(id) { onUpdate(team.players.filter(p=>p.id!==id)); }
   return (
     <div className="card card-sm mt-2 mb-2" style={{background:"var(--cream)"}}>
@@ -1079,28 +1173,40 @@ function EditPlayerSection({team,onUpdate}) {
         </div>
       ))}
       <div className="input-row">
-        <input className="form-input" placeholder="Add player…" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")add();}} style={{fontSize:13,padding:"8px 10px"}}/>
+        <input className="form-input" placeholder="Add player…" value={input} onChange={e=>setInput(e.target.value)}
+          onKeyDown={e=>{if(e.key==="Enter")add();}} style={{fontSize:13,padding:"8px 10px"}}/>
         <button className="btn btn-primary btn-sm" onClick={add}>Add</button>
       </div>
     </div>
   );
 }
 
-// ─── Team Popup (Player Stats) ────────────────────────────────────────────────
-function TeamPopup({team,t,onClose}) {
+// ─── Team Popup with 3D Ball ──────────────────────────────────────────────────
+function TeamPopup({team,t,teamIndex,onClose}) {
   const pStats=getPlayerStats(t);
   const history=t.history||[];
   const teamMatches=history.filter(h=>h.winnerId===team.id||h.loserId===team.id);
+
+  function pName(pid) {
+    for(const tm of t.teams){ const p=tm.players.find(x=>x.id===pid); if(p) return p.name; }
+    return "?";
+  }
 
   return (
     <div className="modal-overlay center" onClick={onClose}>
       <div className="modal-box center-box" style={{position:"relative"}} onClick={e=>e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>✕</button>
+
+        {/* ── 3D Sphere + Serif Bold Header ── */}
         <div className="team-popup-header" style={{background:`linear-gradient(135deg,${team.bg},${team.color}22)`}}>
-          <span className="team-popup-emoji">{team.emoji}</span>
-          <div className="fw-7 fd" style={{fontSize:22,color:team.color}}>{team.name}</div>
-          <div className="text-sm text-muted">{team.wins}W · {team.losses}L · {team.points} pts</div>
-          <div className="progress-bar mt-2" style={{height:8,borderRadius:4}}>
+          <div className="team-popup-top">
+            <SphereBall index={teamIndex} size={56}/>
+            <div style={{textAlign:"left"}}>
+              <div className="team-popup-name" style={{color:team.color}}>{team.name}</div>
+              <div className="team-popup-sub">{team.wins}W · {team.losses}L · {team.points} pts</div>
+            </div>
+          </div>
+          <div className="progress-bar mt-2" style={{height:8,borderRadius:4,width:"100%"}}>
             <div className="pf pf-gold" style={{width:`${Math.min(100,(team.wins/t.winsRequired)*100)}%`}}/>
           </div>
           <div className="text-xs text-muted mt-1">{team.wins}/{t.winsRequired} wins to championship</div>
@@ -1127,33 +1233,26 @@ function TeamPopup({team,t,onClose}) {
         {teamMatches.length>0&&(
           <>
             <div className="divider"/>
-            <div className="fw-7 mb-3" style={{fontSize:14}}>🎮 Match Groups</div>
+            <div className="fw-7 mb-3" style={{fontSize:14}}>🎮 Match History</div>
             {teamMatches.map(h=>{
               const isWinner=h.winnerId===team.id;
               const myPlayers=team.id===h.t0Id?h.t0Players:h.t1Players;
               const oppTeamId=team.id===h.t0Id?h.t1Id:h.t0Id;
               const oppTeam=t.teams.find(x=>x.id===oppTeamId);
               const oppPlayers=team.id===h.t0Id?h.t1Players:h.t0Players;
-              function pName(pid,allTeams) {
-                for(const tm of allTeams) { const p=tm.players.find(x=>x.id===pid); if(p) return p.name; }
-                return "?";
-              }
               return (
                 <div key={h.matchNum} className="hist-item">
                   <span className="hist-num">#{h.matchNum}</span>
                   <div className="hist-info">
                     <div className="hist-players text-sm">
                       <span style={{color:team.color,fontWeight:700}}>{team.emoji} {team.name}</span>
-                      {myPlayers&&myPlayers.length>0&&<span className="text-xs text-muted"> ({myPlayers.map(pid=>pName(pid,t.teams)).join(", ")})</span>}
+                      {myPlayers&&myPlayers.length>0&&<span className="text-xs text-muted"> ({myPlayers.map(pName).join(", ")})</span>}
                       <span className="text-muted"> vs </span>
                       <span style={{color:oppTeam?.color,fontWeight:700}}>{oppTeam?.emoji} {oppTeam?.name}</span>
-                      {oppPlayers&&oppPlayers.length>0&&<span className="text-xs text-muted"> ({oppPlayers.map(pid=>pName(pid,t.teams)).join(", ")})</span>}
+                      {oppPlayers&&oppPlayers.length>0&&<span className="text-xs text-muted"> ({oppPlayers.map(pName).join(", ")})</span>}
                     </div>
                     <div style={{marginTop:4}}>
-                      {isWinner
-                        ?<span className="chip chip-green">✅ Won</span>
-                        :<span className="chip chip-red">❌ Lost</span>
-                      }
+                      {isWinner?<span className="chip chip-green">✅ Won</span>:<span className="chip chip-red">❌ Lost</span>}
                     </div>
                   </div>
                 </div>
@@ -1169,10 +1268,7 @@ function TeamPopup({team,t,onClose}) {
 // ─── History Tab ──────────────────────────────────────────────────────────────
 function HistoryTab({t}) {
   const history=t.history||[];
-  function pName(pid) {
-    for(const tm of t.teams){ const p=tm.players.find(x=>x.id===pid); if(p) return p.name; }
-    return null;
-  }
+  function pName(pid) { for(const tm of t.teams){ const p=tm.players.find(x=>x.id===pid); if(p) return p.name; } return null; }
   function getTeam(id){ return t.teams.find(x=>x.id===id); }
 
   if(!history.length) return <div className="empty-state"><div className="empty-icon">📜</div><p>No matches recorded yet.</p></div>;
@@ -1213,10 +1309,7 @@ function NotesTab({t,onUpdateNotes}) {
   const [notes,setNotes]=useState(t.notes||[]);
   const [input,setInput]=useState("");
 
-  function add() {
-    if(!input.trim()) return;
-    const n=[...notes,input.trim()]; setNotes(n); onUpdateNotes(n); setInput("");
-  }
+  function add() { if(!input.trim()) return; const n=[...notes,input.trim()]; setNotes(n); onUpdateNotes(n); setInput(""); }
   function del(i) { const n=notes.filter((_,j)=>j!==i); setNotes(n); onUpdateNotes(n); }
   function edit(i,v) { const n=notes.map((x,j)=>j===i?v:x); setNotes(n); onUpdateNotes(n); }
 
@@ -1235,11 +1328,11 @@ function NotesTab({t,onUpdateNotes}) {
         ))}
         <div className="divider"/>
         <div className="input-row">
-          <input className="form-input" placeholder="Add a new rule or note…" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")add();}}/>
+          <input className="form-input" placeholder="Add a new rule or note…" value={input}
+            onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")add();}}/>
           <button className="btn btn-primary" style={{flexShrink:0}} onClick={add}>Add</button>
         </div>
       </div>
-
       <div className="card">
         <div className="fw-7 mb-3" style={{fontSize:14}}>⚙️ Tournament Settings</div>
         {[["Points per Win",t.pointsPerWin+" pts","chip-gold"],["Wins Required",t.winsRequired+" wins","chip-green"],["Total Points Pool",t.totalPoints+" pts",""]].map(([l,v,c])=>(
