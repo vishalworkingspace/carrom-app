@@ -349,6 +349,8 @@ export default function App() {
 
   // Global Session Based Admin Lock
   const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem("carrom_admin") === "true");
+  const [showGate, setShowGate] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
 
   const unlockAdmin = () => {
     setIsAdmin(true);
@@ -359,6 +361,15 @@ export default function App() {
     setIsAdmin(false);
     sessionStorage.removeItem("carrom_admin");
   };
+
+  function handleProtectedAction(action) {
+    if (isAdmin) {
+      if (action) action();
+    } else {
+      setPendingAction(() => action);
+      setShowGate(true);
+    }
+  }
 
   // ── Firebase Real-time Sync ──────────────────────────────────────────────
   useEffect(() => {
@@ -601,8 +612,8 @@ export default function App() {
         </div>
       </nav>
 
-      {view==="home"&&<HeroPage onStart={startCreate} tournaments={tournaments} onOpen={openT} onClone={cloneT}/>}
-      {view==="list"&&<TournamentList tournaments={tournaments} onOpen={openT} onCreate={startCreate} onDelete={deleteT} onClone={cloneT}/>}
+      {view==="home"&&<HeroPage onStart={startCreate} tournaments={tournaments} onOpen={openT} onClone={cloneT} protectedAction={handleProtectedAction}/>}
+      {view==="list"&&<TournamentList tournaments={tournaments} onOpen={openT} onCreate={startCreate} onDelete={deleteT} onClone={cloneT} protectedAction={handleProtectedAction}/>}
       {view==="create"&&(
         <CreateWizard step={step} setStep={setStep} canNext={canNext}
           tName={tName} setTName={setTName}
@@ -624,15 +635,33 @@ export default function App() {
           onUpdateSettings={(name,wins,pts,td)=>updateSettings(activeTid,name,wins,pts,td)}
           onClone={()=>cloneT(at)}
           isAdmin={isAdmin} unlockAdmin={unlockAdmin} lockAdmin={lockAdmin}
+          protectedAction={handleProtectedAction}
         />
       )}
       {winner&&(<><Confetti/><WinnerBanner team={winner} onClose={()=>setWinner(null)}/></>)}
+
+      {showGate && (
+        <PasswordGate
+          onSuccess={() => {
+            unlockAdmin();
+            setShowGate(false);
+            if (pendingAction) {
+              pendingAction();
+              setPendingAction(null);
+            }
+          }}
+          onClose={() => {
+            setShowGate(false);
+            setPendingAction(null);
+          }}
+        />
+      )}
     </>
   );
 }
 
 // ─── Hero Page ────────────────────────────────────────────────────────────────
-function HeroPage({onStart,tournaments,onOpen,onClone}) {
+function HeroPage({onStart,tournaments,onOpen,onClone,protectedAction}) {
   const active=tournaments.filter(t=>t.status==="active");
   const done=tournaments.filter(t=>t.status==="completed");
   return (
@@ -653,8 +682,8 @@ function HeroPage({onStart,tournaments,onOpen,onClone}) {
           ))}
         </div>
       </div>
-      {active.length>0&&<div className="page"><h2 className="section-title">🟢 Active</h2><div className="card-grid">{active.map(t=><TCard key={t.id} t={t} onOpen={onOpen} onClone={onClone}/>)}</div></div>}
-      {done.length>0&&<div className="page" style={{paddingTop:0}}><h2 className="section-title">🏆 Completed</h2><div className="card-grid">{done.map(t=><TCard key={t.id} t={t} onOpen={onOpen} onClone={onClone}/>)}</div></div>}
+      {active.length>0&&<div className="page"><h2 className="section-title">🟢 Active</h2><div className="card-grid">{active.map(t=><TCard key={t.id} t={t} onOpen={onOpen} onClone={(t)=>protectedAction(()=>onClone(t))}/>)}</div></div>}
+      {done.length>0&&<div className="page" style={{paddingTop:0}}><h2 className="section-title">🏆 Completed</h2><div className="card-grid">{done.map(t=><TCard key={t.id} t={t} onOpen={onOpen} onClone={(t)=>protectedAction(()=>onClone(t))}/>)}</div></div>}
       {tournaments.length===0&&<div className="page"><div className="empty-state"><div className="empty-icon">🏟️</div><p style={{marginBottom:16}}>No tournaments yet.</p><button className="btn btn-primary btn-lg" onClick={onStart}>🚀 Get Started</button></div></div>}
     </>
   );
@@ -704,7 +733,7 @@ function ConfirmModal({message, onYes, onNo}) {
   );
 }
 
-function TournamentList({tournaments,onOpen,onCreate,onDelete,onClone}) {
+function TournamentList({tournaments,onOpen,onCreate,onDelete,onClone,protectedAction}) {
   const [confirmId, setConfirmId] = useState(null);
   const confirmT = tournaments.find(t=>t.id===confirmId);
   return (
@@ -718,8 +747,8 @@ function TournamentList({tournaments,onOpen,onCreate,onDelete,onClone}) {
         :<div className="card-grid">
           {[...tournaments].sort((a,b)=>b.createdAt-a.createdAt).map(t=>(
             <div key={t.id}>
-              <TCard t={t} onOpen={onOpen} onClone={onClone}/>
-              <button className="btn btn-danger btn-sm btn-full mt-2" onClick={()=>setConfirmId(t.id)}>🗑 Delete</button>
+              <TCard t={t} onOpen={onOpen} onClone={(t)=>protectedAction(()=>onClone(t))}/>
+              <button className="btn btn-danger btn-sm btn-full mt-2" onClick={()=>protectedAction(()=>setConfirmId(t.id))}>🗑 Delete</button>
             </div>
           ))}
         </div>
@@ -865,7 +894,7 @@ function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCoun
   );
 }
 
-function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdatePlayers,onUpdateSettings,onClone,isAdmin,unlockAdmin,lockAdmin}) {
+function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdatePlayers,onUpdateSettings,onClone,isAdmin,unlockAdmin,lockAdmin,protectedAction}) {
   const [tab,setTab]=useState("play");
   const [teamPopup,setTeamPopup]=useState(null);
   const [showDeleteConfirm,setShowDeleteConfirm]=useState(false);
@@ -886,8 +915,8 @@ function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdate
           }
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end"}}>
-          <button className="btn btn-danger btn-sm btn-icon" title="Delete" onClick={()=>setShowDeleteConfirm(true)}>🗑</button>
-          <button className="btn btn-clone btn-sm" onClick={onClone}>📋 Clone</button>
+          <button className="btn btn-danger btn-sm btn-icon" title="Delete" onClick={()=>protectedAction(()=>setShowDeleteConfirm(true))}>🗑</button>
+          <button className="btn btn-clone btn-sm" onClick={()=>protectedAction(onClone)}>📋 Clone</button>
         </div>
       </div>
 
@@ -897,11 +926,11 @@ function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdate
         ))}
       </div>
 
-      {tab==="play"&&<PlayTab t={t} onMatch={onMatch} onUndo={onUndo} onTeamClick={setTeamPopup} isAdmin={isAdmin} unlockAdmin={unlockAdmin} lockAdmin={lockAdmin}/>}
+      {tab==="play"&&<PlayTab t={t} onMatch={onMatch} onUndo={onUndo} onTeamClick={setTeamPopup} isAdmin={isAdmin} protectedAction={protectedAction} lockAdmin={lockAdmin}/>}
       {tab==="teams"&&<TeamsTab t={t} onTeamClick={setTeamPopup} onUpdatePlayers={onUpdatePlayers}/>}
       {tab==="history"&&<HistoryTab t={t}/>}
       {tab==="notes"&&<NotesTab t={t} onUpdateNotes={onUpdateNotes}/>}
-      {tab==="settings"&&<SettingsTab t={t} onUpdateSettings={onUpdateSettings} isAdmin={isAdmin} unlockAdmin={unlockAdmin} lockAdmin={lockAdmin}/>}
+      {tab==="settings"&&<SettingsTab t={t} onUpdateSettings={onUpdateSettings} isAdmin={isAdmin} protectedAction={protectedAction} lockAdmin={lockAdmin}/>}
 
       {teamPopup&&<TeamPopup team={teamPopup} t={t} teamIndex={teamIndex>=0?teamIndex:0} onClose={()=>setTeamPopup(null)}/>}
       {showDeleteConfirm&&(
@@ -913,23 +942,12 @@ function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdate
   );
 }
 
-function PlayTab({t,onMatch,onUndo,onTeamClick,isAdmin,unlockAdmin,lockAdmin}) {
+function PlayTab({t,onMatch,onUndo,onTeamClick,isAdmin,protectedAction,lockAdmin}) {
   const [showPlayerSelect,setShowPlayerSelect]=useState(false);
-  const [showGate, setShowGate] = useState(false);
-  const [pendingAction, setPendingAction] = useState(null);
 
   const sorted = [...(t.teams || [])].sort((a,b)=>b.wins-a.wins);
   const isCompleted=t.status==="completed";
   const totalMatches=t.matchCount||0;
-
-  function handleProtectedAction(action) {
-    if (isAdmin) {
-      action();
-    } else {
-      setPendingAction(() => action);
-      setShowGate(true);
-    }
-  }
 
   return (
     <>
@@ -996,7 +1014,7 @@ function PlayTab({t,onMatch,onUndo,onTeamClick,isAdmin,unlockAdmin,lockAdmin}) {
           </div>
           <div className="match-teams-grid">
             {t.teams && t.teams[0]&&(
-              <button className="match-team-btn" style={{borderColor:t.teams[0].color+"44",background:t.teams[0].bg}} onClick={()=>handleProtectedAction(()=>setShowPlayerSelect(true))}>
+              <button className="match-team-btn" style={{borderColor:t.teams[0].color+"44",background:t.teams[0].bg}} onClick={()=>protectedAction(()=>setShowPlayerSelect(true))}>
                 <span className="match-team-emoji">{t.teams[0].emoji}</span>
                 <span className="match-team-name">{t.teams[0].name}</span>
                 <span className="match-team-wins">{t.teams[0].wins} wins</span>
@@ -1004,7 +1022,7 @@ function PlayTab({t,onMatch,onUndo,onTeamClick,isAdmin,unlockAdmin,lockAdmin}) {
             )}
             <div className="match-vs">VS</div>
             {t.teams && t.teams[1]&&(
-              <button className="match-team-btn" style={{borderColor:t.teams[1].color+"44",background:t.teams[1].bg}} onClick={()=>handleProtectedAction(()=>setShowPlayerSelect(true))}>
+              <button className="match-team-btn" style={{borderColor:t.teams[1].color+"44",background:t.teams[1].bg}} onClick={()=>protectedAction(()=>setShowPlayerSelect(true))}>
                 <span className="match-team-emoji">{t.teams[1].emoji}</span>
                 <span className="match-team-name">{t.teams[1].name}</span>
                 <span className="match-team-wins">{t.teams[1].wins} wins</span>
@@ -1012,7 +1030,7 @@ function PlayTab({t,onMatch,onUndo,onTeamClick,isAdmin,unlockAdmin,lockAdmin}) {
             )}
           </div>
           <p className="text-xs text-muted" style={{textAlign:"center",marginBottom:10}}>Tap either team to record the winner</p>
-          {totalMatches>0&&<button className="btn btn-ghost btn-sm btn-full" onClick={()=>handleProtectedAction(onUndo)}>↩ Undo Last Match</button>}
+          {totalMatches>0&&<button className="btn btn-ghost btn-sm btn-full" onClick={()=>protectedAction(onUndo)}>↩ Undo Last Match</button>}
         </div>
       )}
 
@@ -1022,29 +1040,12 @@ function PlayTab({t,onMatch,onUndo,onTeamClick,isAdmin,unlockAdmin,lockAdmin}) {
           <div className="fd" style={{fontSize:20,fontWeight:900,color:"var(--gold-d)"}}>Tournament Complete!</div>
           <div style={{fontSize:16,fontWeight:700,marginTop:6}}>{t.teams?.find(x=>x.id===t.winnerId)?.emoji} {t.teams?.find(x=>x.id===t.winnerId)?.name} Wins!</div>
           <div className="text-sm text-muted mt-2">{totalMatches} matches played</div>
-          {(t.history||[]).length>0&&<button className="btn btn-secondary btn-sm mt-3" onClick={()=>handleProtectedAction(onUndo)}>↩ Undo Last</button>}
+          {(t.history||[]).length>0&&<button className="btn btn-secondary btn-sm mt-3" onClick={()=>protectedAction(onUndo)}>↩ Undo Last</button>}
         </div>
       )}
 
       {showPlayerSelect&&(
         <PlayerSelectModal t={t} onConfirm={(wId,lId,t0p,t1p)=>{onMatch(t,wId,lId,t0p,t1p);setShowPlayerSelect(false);}} onClose={()=>setShowPlayerSelect(false)}/>
-      )}
-
-      {showGate && (
-        <PasswordGate
-          onSuccess={() => {
-            unlockAdmin();
-            setShowGate(false);
-            if (pendingAction) {
-              pendingAction();
-              setPendingAction(null);
-            }
-          }}
-          onClose={() => {
-            setShowGate(false);
-            setPendingAction(null);
-          }}
-        />
       )}
     </>
   );
@@ -1229,9 +1230,7 @@ function PasswordGate({ onSuccess, onClose }) {
 }
 
 // ─── Settings Tab ────────────────────────────────────────────────────────────
-function SettingsTab({t, onUpdateSettings, isAdmin, unlockAdmin, lockAdmin}) {
-  const [showGate, setShowGate] = useState(false);
-
+function SettingsTab({t, onUpdateSettings, isAdmin, protectedAction, lockAdmin}) {
   if (!isAdmin) {
     return (
       <div>
@@ -1254,16 +1253,10 @@ function SettingsTab({t, onUpdateSettings, isAdmin, unlockAdmin, lockAdmin}) {
             🔒 Admin Only Zone
           </div>
           <br/>
-          <button className="btn btn-primary btn-lg" style={{minWidth:200}} onClick={()=>setShowGate(true)}>
+          <button className="btn btn-primary btn-lg" style={{minWidth:200}} onClick={()=>protectedAction(null)}>
             🔑 Password Daalo
           </button>
         </div>
-        {showGate && (
-          <PasswordGate
-            onSuccess={() => { unlockAdmin(); setShowGate(false); }}
-            onClose={() => setShowGate(false)}
-          />
-        )}
       </div>
     );
   }
