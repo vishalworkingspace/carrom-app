@@ -347,6 +347,19 @@ export default function App() {
   const [notes, setNotes] = useState([]);
   const [noteInput, setNoteInput] = useState("");
 
+  // Global Session Based Admin Lock
+  const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem("carrom_admin") === "true");
+
+  const unlockAdmin = () => {
+    setIsAdmin(true);
+    sessionStorage.setItem("carrom_admin", "true");
+  };
+
+  const lockAdmin = () => {
+    setIsAdmin(false);
+    sessionStorage.removeItem("carrom_admin");
+  };
+
   // ── Firebase Real-time Sync ──────────────────────────────────────────────
   useEffect(() => {
     let unsubscribe = () => {};
@@ -377,8 +390,6 @@ export default function App() {
           if (docSnap.id === "global_data") return;
           const d = docSnap.data();
           
-          // Data Sanitization / Safety Check: 
-          // Ignore documents that are completely invalid or not tournaments
           if (!d || typeof d !== 'object' || !Array.isArray(d.teams)) {
             return;
           }
@@ -470,7 +481,6 @@ export default function App() {
     openT(t.id);
   }
 
-  // ── CLONE TOURNAMENT ───────────────────────────────────────────────────────
   function cloneT(original) {
     const cloned = {
       ...original,
@@ -538,24 +548,26 @@ export default function App() {
     persistSingle(t);
   }
 
-  // ── UPDATE SETTINGS (Name, Wins, Points) ───────────────────────────────────
+  // ── UPDATE SETTINGS (Name & Team Names ONLY) ────────────────────────────────
   function updateSettings(tid, newName, newWins, newPoints, teamData) {
     const t = { ...db[tid] };
     t.name = newName.trim() || t.name;
     t.winsRequired = Math.max(1, parseInt(newWins) || t.winsRequired);
     t.totalPoints = Math.max(1, parseInt(newPoints) || t.totalPoints);
     t.pointsPerWin = t.winsRequired > 0 ? Math.round(t.totalPoints / t.winsRequired) : t.pointsPerWin;
+    
+    // Update ONLY names. Keep original wins and losses intact!
     t.teams = t.teams.map(tm => {
       const td = teamData && teamData[tm.id];
-      const wins = td ? td.wins : tm.wins;
-      const losses = td ? td.losses : tm.losses;
-      const name = (td && td.name && td.name.trim()) ? td.name.trim() : tm.name;
-      return { ...tm, name, wins, losses, points: wins * t.pointsPerWin };
+      const name = (td && td.name !== undefined) ? (td.name.trim() || tm.name) : tm.name;
+      return { ...tm, name, points: tm.wins * t.pointsPerWin };
     });
-    t.matchCount = Math.round(t.teams.reduce((s, tm) => s + tm.wins + tm.losses, 0) / 2);
+    
+    // Check winner logic in case win requirements changed
     const winner = t.teams.find(tm => tm.wins >= t.winsRequired);
     if (winner) { t.status = "completed"; t.winnerId = winner.id; }
     else { t.status = "active"; t.winnerId = null; }
+    
     persistSingle(t);
   }
 
@@ -609,8 +621,9 @@ export default function App() {
           onDelete={()=>deleteT(activeTid)} onBack={goHome}
           onUpdateNotes={(n)=>updateNotes(activeTid,n)}
           onUpdatePlayers={(teamId,players)=>updateTeamPlayers(activeTid,teamId,players)}
-          onUpdateSettings={(name,wins,pts)=>updateSettings(activeTid,name,wins,pts)}
+          onUpdateSettings={(name,wins,pts,td)=>updateSettings(activeTid,name,wins,pts,td)}
           onClone={()=>cloneT(at)}
+          isAdmin={isAdmin} unlockAdmin={unlockAdmin} lockAdmin={lockAdmin}
         />
       )}
       {winner&&(<><Confetti/><WinnerBanner team={winner} onClose={()=>setWinner(null)}/></>)}
@@ -675,7 +688,6 @@ function TCard({t,onOpen,onClone}) {
   );
 }
 
-// ─── Confirm Modal ────────────────────────────────────────────────────────────
 function ConfirmModal({message, onYes, onNo}) {
   return (
     <div className="modal-overlay center" style={{zIndex:9999}} onClick={onNo}>
@@ -692,7 +704,6 @@ function ConfirmModal({message, onYes, onNo}) {
   );
 }
 
-// ─── Tournament List ──────────────────────────────────────────────────────────
 function TournamentList({tournaments,onOpen,onCreate,onDelete,onClone}) {
   const [confirmId, setConfirmId] = useState(null);
   const confirmT = tournaments.find(t=>t.id===confirmId);
@@ -722,7 +733,6 @@ function TournamentList({tournaments,onOpen,onCreate,onDelete,onClone}) {
   );
 }
 
-// ─── Create Wizard ────────────────────────────────────────────────────────────
 const STEP_LABELS = ["Teams","Scoring","Notes"];
 
 function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCount,cTeams,updateCTeamName,addCPlayer,removeCPlayer,winsRequired,setWinsRequired,totalPoints,setTotalPoints,ppw,notes,setNotes,noteInput,setNoteInput,onCreate}) {
@@ -855,8 +865,7 @@ function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCoun
   );
 }
 
-// ─── Tournament View ──────────────────────────────────────────────────────────
-function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdatePlayers,onUpdateSettings,onClone}) {
+function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdatePlayers,onUpdateSettings,onClone,isAdmin,unlockAdmin,lockAdmin}) {
   const [tab,setTab]=useState("play");
   const [teamPopup,setTeamPopup]=useState(null);
   const [showDeleteConfirm,setShowDeleteConfirm]=useState(false);
@@ -864,7 +873,6 @@ function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdate
 
   return (
     <div className="page">
-      {/* ── Styled Header with Serif Bold + Pulsing Badge ── */}
       <div className="flex-between mb-4">
         <div>
           <button className="btn btn-ghost btn-sm mb-2" onClick={onBack}>← Back</button>
@@ -889,11 +897,11 @@ function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdate
         ))}
       </div>
 
-      {tab==="play"&&<PlayTab t={t} onMatch={onMatch} onUndo={onUndo} onTeamClick={setTeamPopup}/>}
+      {tab==="play"&&<PlayTab t={t} onMatch={onMatch} onUndo={onUndo} onTeamClick={setTeamPopup} isAdmin={isAdmin} unlockAdmin={unlockAdmin} lockAdmin={lockAdmin}/>}
       {tab==="teams"&&<TeamsTab t={t} onTeamClick={setTeamPopup} onUpdatePlayers={onUpdatePlayers}/>}
       {tab==="history"&&<HistoryTab t={t}/>}
       {tab==="notes"&&<NotesTab t={t} onUpdateNotes={onUpdateNotes}/>}
-      {tab==="settings"&&<SettingsTab t={t} onUpdateSettings={onUpdateSettings}/>}
+      {tab==="settings"&&<SettingsTab t={t} onUpdateSettings={onUpdateSettings} isAdmin={isAdmin} unlockAdmin={unlockAdmin} lockAdmin={lockAdmin}/>}
 
       {teamPopup&&<TeamPopup team={teamPopup} t={t} teamIndex={teamIndex>=0?teamIndex:0} onClose={()=>setTeamPopup(null)}/>}
       {showDeleteConfirm&&(
@@ -905,10 +913,8 @@ function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdate
   );
 }
 
-// ─── Play Tab ─────────────────────────────────────────────────────────────────
-function PlayTab({t,onMatch,onUndo,onTeamClick}) {
+function PlayTab({t,onMatch,onUndo,onTeamClick,isAdmin,unlockAdmin,lockAdmin}) {
   const [showPlayerSelect,setShowPlayerSelect]=useState(false);
-  const [unlocked, setUnlocked] = useState(false);
   const [showGate, setShowGate] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
 
@@ -917,7 +923,7 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
   const totalMatches=t.matchCount||0;
 
   function handleProtectedAction(action) {
-    if (unlocked) {
+    if (isAdmin) {
       action();
     } else {
       setPendingAction(() => action);
@@ -929,8 +935,8 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
     <>
       <div className="flex-between mb-2">
         <div className="fw-7" style={{fontSize:14}}>📊 Stats</div>
-        {unlocked && !isCompleted && (
-          <button className="btn btn-ghost btn-xs" onClick={()=>setUnlocked(false)}>🔒 Lock Scoring</button>
+        {isAdmin && !isCompleted && (
+          <button className="btn btn-ghost btn-xs" onClick={lockAdmin}>🔒 Lock Scoring</button>
         )}
       </div>
 
@@ -986,7 +992,7 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
         <div className="match-record-box">
           <div className="match-title">
             🎯 Match #{totalMatches+1} — Who Won?
-            {!unlocked && <span style={{marginLeft:"auto", fontSize:16}} title="Locked">🔒</span>}
+            {!isAdmin && <span style={{marginLeft:"auto", fontSize:16}} title="Locked">🔒</span>}
           </div>
           <div className="match-teams-grid">
             {t.teams && t.teams[0]&&(
@@ -1027,7 +1033,7 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
       {showGate && (
         <PasswordGate
           onSuccess={() => {
-            setUnlocked(true);
+            unlockAdmin();
             setShowGate(false);
             if (pendingAction) {
               pendingAction();
@@ -1044,7 +1050,6 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
   );
 }
 
-// ─── Player Select Modal ──────────────────────────────────────────────────────
 function PlayerSelectModal({t,onConfirm,onClose}) {
   const [t0Players,setT0Players]=useState([]);
   const [t1Players,setT1Players]=useState([]);
@@ -1147,7 +1152,6 @@ function PlayerSelectModal({t,onConfirm,onClose}) {
   );
 }
 
-// ─── Password Gate Modal ─────────────────────────────────────────────────────
 const ADMIN_PASSWORD = "daddyshome";
 
 function PasswordGate({ onSuccess, onClose }) {
@@ -1174,7 +1178,6 @@ function PasswordGate({ onSuccess, onClose }) {
       <div className="modal-box center-box" style={{maxWidth:340,padding:"32px 24px",textAlign:"center",position:"relative"}} onClick={e=>e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>✕</button>
 
-        {/* Lock Icon */}
         <div style={{
           width:64,height:64,borderRadius:"50%",
           background:"linear-gradient(135deg,#5c3d1e,#9a6f2a)",
@@ -1186,7 +1189,6 @@ function PasswordGate({ onSuccess, onClose }) {
         <div className="fd fw-7" style={{fontSize:20,color:"var(--brown)",marginBottom:6}}>Beta Ji, Pehle Code To</div>
         <div className="text-sm text-muted" style={{marginBottom:24}}>Settings edit karne ke liye password daalo</div>
 
-        {/* Password Input */}
         <div style={{
           animation: shake ? "wrongShake 0.5s ease" : "none",
         }}>
@@ -1227,12 +1229,10 @@ function PasswordGate({ onSuccess, onClose }) {
 }
 
 // ─── Settings Tab ────────────────────────────────────────────────────────────
-function SettingsTab({t, onUpdateSettings}) {
-  const [unlocked, setUnlocked] = useState(false);
+function SettingsTab({t, onUpdateSettings, isAdmin, unlockAdmin, lockAdmin}) {
   const [showGate, setShowGate] = useState(false);
 
-  // Agar locked hai to gate dikhao
-  if (!unlocked) {
+  if (!isAdmin) {
     return (
       <div>
         <div className="card" style={{textAlign:"center",padding:"48px 24px"}}>
@@ -1260,7 +1260,7 @@ function SettingsTab({t, onUpdateSettings}) {
         </div>
         {showGate && (
           <PasswordGate
-            onSuccess={() => { setUnlocked(true); setShowGate(false); }}
+            onSuccess={() => { unlockAdmin(); setShowGate(false); }}
             onClose={() => setShowGate(false)}
           />
         )}
@@ -1268,43 +1268,33 @@ function SettingsTab({t, onUpdateSettings}) {
     );
   }
 
-  // ── Unlocked — actual settings ──────────────────────────────────────────
-  return <SettingsForm t={t} onUpdateSettings={onUpdateSettings} onLock={() => setUnlocked(false)} />;
+  return <SettingsForm t={t} onUpdateSettings={onUpdateSettings} onLock={lockAdmin} />;
 }
 
 function SettingsForm({t, onUpdateSettings, onLock}) {
   const [name, setName] = useState(t.name);
   const [winsReq, setWinsReq] = useState(t.winsRequired);
   const [points, setPoints] = useState(t.totalPoints);
-  const [teamData, setTeamData] = useState(
-    (t.teams || []).reduce((acc, tm) => ({
-      ...acc,
-      [tm.id]: { wins: tm.wins, losses: tm.losses, name: tm.name }
-    }), {})
-  );
+  
+  const [teamNames, setTeamNames] = useState({});
   const [saved, setSaved] = useState(false);
 
   const previewPPW = winsReq > 0 ? Math.round(points / winsReq) : 0;
 
-  function setTeamVal(id, field, val) {
-    setTeamData(prev => ({
-      ...prev,
-      [id]: {
-        ...prev[id],
-        [field]: field === "name" ? val : Math.max(0, parseInt(val)||0)
-      }
-    }));
-  }
-
   function save() {
-    onUpdateSettings(name, winsReq, points, teamData);
+    const finalTeamData = {};
+    (t.teams || []).forEach(tm => {
+      finalTeamData[tm.id] = { name: teamNames[tm.id] ?? tm.name };
+    });
+
+    onUpdateSettings(name, winsReq, points, finalTeamData);
     setSaved(true);
+    setTeamNames({}); // Clear overrides so it mirrors the new database state
     setTimeout(() => setSaved(false), 2000);
   }
 
   return (
     <div>
-      {/* Unlocked banner */}
       <div style={{
         background:"linear-gradient(135deg,#f0fdf4,#dcfce7)",
         border:"1.5px solid #4ade80",
@@ -1319,7 +1309,6 @@ function SettingsForm({t, onUpdateSettings, onLock}) {
         <button className="btn btn-ghost btn-xs" onClick={onLock} style={{color:"var(--slate-l)"}}>🔒 Lock</button>
       </div>
 
-      {/* Tournament Settings */}
       <div className="card mb-3">
         <div className="fd fw-7 mb-4" style={{fontSize:18}}>⚙️ Tournament Settings</div>
         <div className="form-group">
@@ -1343,10 +1332,10 @@ function SettingsForm({t, onUpdateSettings, onLock}) {
         </div>
       </div>
 
-      {/* Team Edit + Score Restore */}
+      {/* ── ONLY Edit Names Allowed Now ── */}
       <div className="card mb-3">
-        <div className="fd fw-7 mb-1" style={{fontSize:18}}>🏷️ Teams — Name, Wins & Losses</div>
-        <p className="text-sm text-muted mb-4">Team name badlo ya score restore karo.</p>
+        <div className="fd fw-7 mb-1" style={{fontSize:18}}>🏷️ Teams — Edit Names</div>
+        <p className="text-sm text-muted mb-4">Sirf team ka naam yahan se change kar sakte hain.</p>
         {(t.teams || []).map((team) => (
           <div key={team.id} style={{
             padding:"14px",borderRadius:12,marginBottom:12,
@@ -1356,27 +1345,11 @@ function SettingsForm({t, onUpdateSettings, onLock}) {
               <span style={{fontSize:20}}>{team.emoji}</span>
               <span style={{fontWeight:700,fontSize:13,color:team.color,opacity:.8}}>{team.name}</span>
             </div>
-            <div className="form-group" style={{marginBottom:10}}>
+            <div className="form-group" style={{marginBottom:0}}>
               <label className="form-label">Team Name</label>
-              <input className="form-input" value={teamData[team.id]?.name ?? team.name}
-                onChange={e=>setTeamVal(team.id,"name",e.target.value)}
+              <input className="form-input" value={teamNames[team.id] ?? team.name}
+                onChange={e=>setTeamNames(p=>({...p, [team.id]: e.target.value}))}
                 style={{borderColor:team.color+"66"}}/>
-            </div>
-            <div className="form-row">
-              <div className="form-group" style={{marginBottom:0}}>
-                <label className="form-label">Wins</label>
-                <input className="form-input" type="number" min="0"
-                  value={teamData[team.id]?.wins ?? team.wins}
-                  onChange={e=>setTeamVal(team.id,"wins",e.target.value)}
-                  style={{borderColor:team.color+"66"}}/>
-              </div>
-              <div className="form-group" style={{marginBottom:0}}>
-                <label className="form-label">Losses</label>
-                <input className="form-input" type="number" min="0"
-                  value={teamData[team.id]?.losses ?? team.losses}
-                  onChange={e=>setTeamVal(team.id,"losses",e.target.value)}
-                  style={{borderColor:team.color+"66"}}/>
-              </div>
             </div>
           </div>
         ))}
@@ -1471,7 +1444,6 @@ function EditPlayerSection({team,onUpdate}) {
   );
 }
 
-// ─── Team Popup with 3D Ball ──────────────────────────────────────────────────
 function TeamPopup({team,t,teamIndex,onClose}) {
   const pStats=getPlayerStats(t);
   const history=t.history||[];
@@ -1492,7 +1464,6 @@ function TeamPopup({team,t,teamIndex,onClose}) {
       <div className="modal-box center-box" style={{position:"relative"}} onClick={e=>e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>✕</button>
 
-        {/* ── 3D Sphere + Serif Bold Header ── */}
         <div className="team-popup-header" style={{background:`linear-gradient(135deg,${team.bg},${team.color}22)`}}>
           <div className="team-popup-top">
             <SphereBall index={teamIndex} size={56}/>
@@ -1560,7 +1531,6 @@ function TeamPopup({team,t,teamIndex,onClose}) {
   );
 }
 
-// ─── History Tab ──────────────────────────────────────────────────────────────
 function HistoryTab({t}) {
   const history=t.history||[];
   function pName(pid) { 
@@ -1606,7 +1576,6 @@ function HistoryTab({t}) {
   );
 }
 
-// ─── Notes Tab ────────────────────────────────────────────────────────────────
 function NotesTab({t,onUpdateNotes}) {
   const [notes,setNotes]=useState(t.notes||[]);
   const [input,setInput]=useState("");
@@ -1647,7 +1616,6 @@ function NotesTab({t,onUpdateNotes}) {
   );
 }
 
-// ─── Winner Banner ────────────────────────────────────────────────────────────
 function WinnerBanner({team,onClose}) {
   return (
     <div className="winner-overlay" onClick={onClose}>
