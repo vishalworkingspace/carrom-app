@@ -908,12 +908,32 @@ function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdate
 // ─── Play Tab ─────────────────────────────────────────────────────────────────
 function PlayTab({t,onMatch,onUndo,onTeamClick}) {
   const [showPlayerSelect,setShowPlayerSelect]=useState(false);
+  const [unlocked, setUnlocked] = useState(false);
+  const [showGate, setShowGate] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
+
   const sorted = [...(t.teams || [])].sort((a,b)=>b.wins-a.wins);
   const isCompleted=t.status==="completed";
   const totalMatches=t.matchCount||0;
 
+  function handleProtectedAction(action) {
+    if (unlocked) {
+      action();
+    } else {
+      setPendingAction(() => action);
+      setShowGate(true);
+    }
+  }
+
   return (
     <>
+      <div className="flex-between mb-2">
+        <div className="fw-7" style={{fontSize:14}}>📊 Stats</div>
+        {unlocked && !isCompleted && (
+          <button className="btn btn-ghost btn-xs" onClick={()=>setUnlocked(false)}>🔒 Lock Scoring</button>
+        )}
+      </div>
+
       <div className="stat-grid mb-4">
         {[
           {label:"Matches",val:totalMatches,style:{}},
@@ -964,10 +984,13 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
 
       {!isCompleted&&(
         <div className="match-record-box">
-          <div className="match-title">🎯 Match #{totalMatches+1} — Who Won?</div>
+          <div className="match-title">
+            🎯 Match #{totalMatches+1} — Who Won?
+            {!unlocked && <span style={{marginLeft:"auto", fontSize:16}} title="Locked">🔒</span>}
+          </div>
           <div className="match-teams-grid">
             {t.teams && t.teams[0]&&(
-              <button className="match-team-btn" style={{borderColor:t.teams[0].color+"44",background:t.teams[0].bg}} onClick={()=>setShowPlayerSelect(true)}>
+              <button className="match-team-btn" style={{borderColor:t.teams[0].color+"44",background:t.teams[0].bg}} onClick={()=>handleProtectedAction(()=>setShowPlayerSelect(true))}>
                 <span className="match-team-emoji">{t.teams[0].emoji}</span>
                 <span className="match-team-name">{t.teams[0].name}</span>
                 <span className="match-team-wins">{t.teams[0].wins} wins</span>
@@ -975,7 +998,7 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
             )}
             <div className="match-vs">VS</div>
             {t.teams && t.teams[1]&&(
-              <button className="match-team-btn" style={{borderColor:t.teams[1].color+"44",background:t.teams[1].bg}} onClick={()=>setShowPlayerSelect(true)}>
+              <button className="match-team-btn" style={{borderColor:t.teams[1].color+"44",background:t.teams[1].bg}} onClick={()=>handleProtectedAction(()=>setShowPlayerSelect(true))}>
                 <span className="match-team-emoji">{t.teams[1].emoji}</span>
                 <span className="match-team-name">{t.teams[1].name}</span>
                 <span className="match-team-wins">{t.teams[1].wins} wins</span>
@@ -983,7 +1006,7 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
             )}
           </div>
           <p className="text-xs text-muted" style={{textAlign:"center",marginBottom:10}}>Tap either team to record the winner</p>
-          {totalMatches>0&&<button className="btn btn-ghost btn-sm btn-full" onClick={onUndo}>↩ Undo Last Match</button>}
+          {totalMatches>0&&<button className="btn btn-ghost btn-sm btn-full" onClick={()=>handleProtectedAction(onUndo)}>↩ Undo Last Match</button>}
         </div>
       )}
 
@@ -993,12 +1016,29 @@ function PlayTab({t,onMatch,onUndo,onTeamClick}) {
           <div className="fd" style={{fontSize:20,fontWeight:900,color:"var(--gold-d)"}}>Tournament Complete!</div>
           <div style={{fontSize:16,fontWeight:700,marginTop:6}}>{t.teams?.find(x=>x.id===t.winnerId)?.emoji} {t.teams?.find(x=>x.id===t.winnerId)?.name} Wins!</div>
           <div className="text-sm text-muted mt-2">{totalMatches} matches played</div>
-          {(t.history||[]).length>0&&<button className="btn btn-secondary btn-sm mt-3" onClick={onUndo}>↩ Undo Last</button>}
+          {(t.history||[]).length>0&&<button className="btn btn-secondary btn-sm mt-3" onClick={()=>handleProtectedAction(onUndo)}>↩ Undo Last</button>}
         </div>
       )}
 
       {showPlayerSelect&&(
         <PlayerSelectModal t={t} onConfirm={(wId,lId,t0p,t1p)=>{onMatch(t,wId,lId,t0p,t1p);setShowPlayerSelect(false);}} onClose={()=>setShowPlayerSelect(false)}/>
+      )}
+
+      {showGate && (
+        <PasswordGate
+          onSuccess={() => {
+            setUnlocked(true);
+            setShowGate(false);
+            if (pendingAction) {
+              pendingAction();
+              setPendingAction(null);
+            }
+          }}
+          onClose={() => {
+            setShowGate(false);
+            setPendingAction(null);
+          }}
+        />
       )}
     </>
   );
