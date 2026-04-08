@@ -685,6 +685,7 @@ export default function App() {
           ppw={ppw} notes={notes} setNotes={setNotes}
           noteInput={noteInput} setNoteInput={setNoteInput}
           onCreate={createTournament}
+          onBack={goHome}
         />
       )}
       {view==="tournament"&&at&&(
@@ -757,8 +758,8 @@ function HeroPage({onStart,tournaments,onOpen,onClone,protectedAction}) {
         {/* Create new button moved below stats if there is an active tournament */}
         {latestActive && (
           <button 
-            className="btn btn-ghost mt-4" 
-            style={{borderColor: "rgba(255,255,255,0.3)", color: "white", padding: "10px 24px"}} 
+            className="btn btn-ghost" 
+            style={{marginTop: "28px", borderColor: "rgba(255,255,255,0.3)", color: "white", padding: "10px 24px", background: "rgba(255,255,255,0.05)"}} 
             onClick={onStart}
           >
             ➕ Create New Tournament
@@ -847,7 +848,7 @@ function TournamentList({tournaments,onOpen,onCreate,onDelete,onClone,protectedA
 
 const STEP_LABELS = ["Teams","Scoring","Notes"];
 
-function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCount,cTeams,updateCTeamName,addCPlayer,removeCPlayer,winsRequired,setWinsRequired,totalPoints,setTotalPoints,ppw,notes,setNotes,noteInput,setNoteInput,onCreate}) {
+function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCount,cTeams,updateCTeamName,addCPlayer,removeCPlayer,winsRequired,setWinsRequired,totalPoints,setTotalPoints,ppw,notes,setNotes,noteInput,setNoteInput,onCreate,onBack}) {
   const [activeTeamTab,setActiveTeamTab]=useState(0);
   const [playerInputs,setPlayerInputs]=useState({});
 
@@ -966,7 +967,7 @@ function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCoun
         )}
         <div className="divider"/>
         <div className="flex-between">
-          <button className="btn btn-secondary" onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0}>← Back</button>
+          <button className="btn btn-secondary" onClick={()=>step===0 ? onBack() : setStep(s=>Math.max(0,s-1))}>← Back</button>
           {step<2
             ?<button className="btn btn-primary" onClick={()=>setStep(s=>s+1)} disabled={!canNext()}>Next →</button>
             :<button className="btn btn-primary btn-lg" onClick={onCreate}>🚀 Launch!</button>
