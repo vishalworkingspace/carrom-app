@@ -75,12 +75,12 @@ body{font-family:var(--fb);background:var(--cream);color:var(--brown);min-height
 .hero h1{font-family:var(--fd);font-size:clamp(36px,9vw,76px);color:var(--white);font-weight:900;line-height:1;margin-bottom:12px;position:relative;text-shadow:0 4px 24px rgba(0,0,0,.3)}
 .hero h1 span{color:var(--gold-l)}
 .hero-sub{font-size:15px;color:rgba(255,255,255,.68);margin-bottom:32px;position:relative;max-width:320px}
-.hero-cta{background:linear-gradient(135deg,var(--gold),#d4a84b);color:var(--white);font-size:16px;font-weight:700;padding:15px 40px;border-radius:14px;border:none;cursor:pointer;font-family:var(--fb);transition:all .3s;box-shadow:0 8px 32px rgba(201,151,63,.5);position:relative}
+.hero-cta{background:linear-gradient(135deg,var(--gold),#d4a84b);color:var(--white);font-size:16px;font-weight:700;padding:15px 40px;border-radius:14px;border:none;cursor:pointer;font-family:var(--fb);transition:all .3s;box-shadow:0 8px 32px rgba(201,151,63,.5);position:relative;width:100%;max-width:320px}
 .hero-cta:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(201,151,63,.65)}
-.hero-stats{display:flex;gap:24px;margin-top:40px;position:relative;flex-wrap:wrap;justify-content:center}
+.hero-stats{display:flex;gap:24px;margin-top:32px;position:relative;flex-wrap:wrap;justify-content:center;background:rgba(0,0,0,0.15);padding:16px 24px;border-radius:20px;backdrop-filter:blur(4px)}
 .hero-stat{text-align:center}
 .hero-stat strong{display:block;font-size:26px;font-weight:700;color:var(--gold-l);font-family:var(--fd)}
-.hero-stat span{font-size:12px;color:rgba(255,255,255,.6);font-weight:500}
+.hero-stat span{font-size:12px;color:rgba(255,255,255,.6);font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
 
 .page{padding:24px 16px;max-width:880px;margin:0 auto;width:100%}
 .section-title{font-family:var(--fd);font-size:22px;font-weight:900;color:var(--brown);margin-bottom:18px}
@@ -412,7 +412,8 @@ export default function App() {
             teams: d.teams,
             history: Array.isArray(d.history) ? d.history : [],
             status: d.status || "active",
-            matchCount: d.matchCount || 0
+            matchCount: d.matchCount || 0,
+            updatedAt: d.updatedAt || Date.now()
           };
         });
         setDb(data);
@@ -486,7 +487,7 @@ export default function App() {
     const t = {
       id:uid(), name:tName.trim(), winsRequired, totalPoints, pointsPerWin:ppw,
       teams:cTeams.map((t,i)=>({...t,wins:0,losses:0,points:0,emoji:TEAM_EMOJIS[i],color:TEAM_COLORS[i],bg:TEAM_BG[i]})),
-      history:[], notes, status:"active", createdAt:Date.now(), winnerId:null, matchCount:0,
+      history:[], notes, status:"active", createdAt:Date.now(), updatedAt:Date.now(), winnerId:null, matchCount:0,
     };
     persistSingle(t);
     openT(t.id);
@@ -502,6 +503,7 @@ export default function App() {
       matchCount: 0,
       history: [],
       createdAt: Date.now(),
+      updatedAt: Date.now(),
       teams: original.teams?.map(tm => ({
         ...tm,
         id: uid(),
@@ -547,6 +549,64 @@ export default function App() {
     });
     persistSingle(t);
     setWinner(null);
+  }
+
+  // ── EDIT PAST MATCH DETAILS ──
+  function editMatchDetails(t, matchNum, newWinnerId, newLoserId, newT0Players, newT1Players) {
+    const nt = { ...t };
+    const matchIndex = nt.history.findIndex(h => h.matchNum === matchNum);
+    if (matchIndex === -1) return;
+
+    const oldMatch = nt.history[matchIndex];
+
+    // Revert old scores safely
+    nt.teams = nt.teams.map(tm => {
+      let utm = { ...tm };
+      if (utm.id === oldMatch.winnerId) {
+        utm.wins = Math.max(0, utm.wins - 1);
+        utm.points = Math.max(0, utm.points - (nt.pointsPerWin || 0));
+      }
+      if (utm.id === oldMatch.loserId) {
+        utm.losses = Math.max(0, utm.losses - 1);
+      }
+      return utm;
+    });
+
+    // Apply new scores safely
+    nt.teams = nt.teams.map(tm => {
+      let utm = { ...tm };
+      if (utm.id === newWinnerId) {
+        utm.wins += 1;
+        utm.points += (nt.pointsPerWin || 0);
+      }
+      if (utm.id === newLoserId) {
+        utm.losses += 1;
+      }
+      return utm;
+    });
+
+    // Update history entry
+    nt.history[matchIndex] = {
+      ...oldMatch,
+      winnerId: newWinnerId,
+      loserId: newLoserId,
+      t0Players: newT0Players || [],
+      t1Players: newT1Players || []
+    };
+
+    // Recalculate Winner logically in case edit changed the championship
+    const winTeam = nt.teams.find(tm => tm.wins >= nt.winsRequired);
+    if (winTeam) {
+      nt.status = "completed";
+      nt.winnerId = winTeam.id;
+      if (activeTid === nt.id) setWinner(winTeam);
+    } else {
+      nt.status = "active";
+      nt.winnerId = null;
+      if (activeTid === nt.id) setWinner(null);
+    }
+
+    persistSingle(nt);
   }
 
   function updateNotes(tid, newNotes) {
@@ -628,7 +688,7 @@ export default function App() {
         />
       )}
       {view==="tournament"&&at&&(
-        <TournamentView t={at} onMatch={recordMatch} onUndo={undoMatch}
+        <TournamentView t={at} onMatch={recordMatch} onUndo={undoMatch} onEditMatch={editMatchDetails}
           onDelete={()=>deleteT(activeTid)} onBack={goHome}
           onUpdateNotes={(n)=>updateNotes(activeTid,n)}
           onUpdatePlayers={(teamId,players)=>updateTeamPlayers(activeTid,teamId,players)}
@@ -664,13 +724,25 @@ export default function App() {
 function HeroPage({onStart,tournaments,onOpen,onClone,protectedAction}) {
   const active=tournaments.filter(t=>t.status==="active");
   const done=tournaments.filter(t=>t.status==="completed");
+  
+  // Find the most recently updated active tournament
+  const latestActive = active.length > 0 
+    ? [...active].sort((a,b)=>(b.updatedAt||0) - (a.updatedAt||0))[0] 
+    : null;
+
   return (
     <>
       <div className="hero">
         <div className="hero-disc">🎯</div>
         <h1>Carrom <span>Master</span></h1>
         <p className="hero-sub">Track tournaments · Manage teams · Crown champions</p>
-        <button className="hero-cta" onClick={onStart}>🏆 Create Tournament</button>
+        
+        {latestActive ? (
+          <button className="hero-cta" onClick={() => onOpen(latestActive.id)}>🎮 Go to Active Tournament</button>
+        ) : (
+          <button className="hero-cta" onClick={onStart}>🏆 Create Tournament</button>
+        )}
+
         <div className="hero-stats">
           {[
             ["Total", tournaments.length],
@@ -681,6 +753,17 @@ function HeroPage({onStart,tournaments,onOpen,onClone,protectedAction}) {
             <div key={l} className="hero-stat"><strong>{Number(v) || 0}</strong><span>{l}</span></div>
           ))}
         </div>
+
+        {/* Create new button moved below stats if there is an active tournament */}
+        {latestActive && (
+          <button 
+            className="btn btn-ghost mt-4" 
+            style={{borderColor: "rgba(255,255,255,0.3)", color: "white", padding: "10px 24px"}} 
+            onClick={onStart}
+          >
+            ➕ Create New Tournament
+          </button>
+        )}
       </div>
       {active.length>0&&<div className="page"><h2 className="section-title">🟢 Active</h2><div className="card-grid">{active.map(t=><TCard key={t.id} t={t} onOpen={onOpen} onClone={(t)=>protectedAction(()=>onClone(t))}/>)}</div></div>}
       {done.length>0&&<div className="page" style={{paddingTop:0}}><h2 className="section-title">🏆 Completed</h2><div className="card-grid">{done.map(t=><TCard key={t.id} t={t} onOpen={onOpen} onClone={(t)=>protectedAction(()=>onClone(t))}/>)}</div></div>}
@@ -894,7 +977,7 @@ function CreateWizard({step,setStep,canNext,tName,setTName,numTeams,syncTeamCoun
   );
 }
 
-function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdatePlayers,onUpdateSettings,onClone,isAdmin,unlockAdmin,lockAdmin,protectedAction}) {
+function TournamentView({t,onMatch,onUndo,onEditMatch,onDelete,onBack,onUpdateNotes,onUpdatePlayers,onUpdateSettings,onClone,isAdmin,unlockAdmin,lockAdmin,protectedAction}) {
   const [tab,setTab]=useState("play");
   const [teamPopup,setTeamPopup]=useState(null);
   const [showDeleteConfirm,setShowDeleteConfirm]=useState(false);
@@ -916,7 +999,7 @@ function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdate
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end"}}>
           <button className="btn btn-danger btn-sm btn-icon" title="Delete" onClick={()=>protectedAction(()=>setShowDeleteConfirm(true))}>🗑</button>
-          <button className="btn btn-clone btn-sm" onClick={()=>protectedAction(onClone)}>📋 Clone</button>
+          <button className="btn btn-clone btn-sm" onClick={()=>protectedAction(()=>onClone(t))}>📋 Clone</button>
         </div>
       </div>
 
@@ -928,7 +1011,7 @@ function TournamentView({t,onMatch,onUndo,onDelete,onBack,onUpdateNotes,onUpdate
 
       {tab==="play"&&<PlayTab t={t} onMatch={onMatch} onUndo={onUndo} onTeamClick={setTeamPopup} isAdmin={isAdmin} protectedAction={protectedAction} lockAdmin={lockAdmin}/>}
       {tab==="teams"&&<TeamsTab t={t} onTeamClick={setTeamPopup} onUpdatePlayers={onUpdatePlayers}/>}
-      {tab==="history"&&<HistoryTab t={t}/>}
+      {tab==="history"&&<HistoryTab t={t} protectedAction={protectedAction} onEditMatch={onEditMatch}/>}
       {tab==="notes"&&<NotesTab t={t} onUpdateNotes={onUpdateNotes}/>}
       {tab==="settings"&&<SettingsTab t={t} onUpdateSettings={onUpdateSettings} isAdmin={isAdmin} protectedAction={protectedAction} lockAdmin={lockAdmin}/>}
 
@@ -1524,8 +1607,11 @@ function TeamPopup({team,t,teamIndex,onClose}) {
   );
 }
 
-function HistoryTab({t}) {
+// ─── History Tab with Edit Modal ──────────────────────────────────────────────
+function HistoryTab({t, protectedAction, onEditMatch}) {
+  const [editingMatch, setEditingMatch] = useState(null);
   const history=t.history||[];
+  
   function pName(pid) { 
     if (!t.teams) return null;
     for(const tm of t.teams){ 
@@ -1534,12 +1620,13 @@ function HistoryTab({t}) {
     } 
     return null; 
   }
+  
   function getTeam(id){ return (t.teams || []).find(x=>x.id===id); }
 
   if(!history.length) return <div className="empty-state"><div className="empty-icon">📜</div><p>No matches recorded yet.</p></div>;
 
   return (
-    <div className="card">
+    <div className="card" style={{padding: "16px 12px"}}>
       <div className="fw-7 mb-3" style={{fontSize:15}}>📜 Match History — {history.length} matches</div>
       {[...history].reverse().map(h=>{
         const winner=getTeam(h.winnerId), loser=getTeam(h.loserId);
@@ -1547,24 +1634,153 @@ function HistoryTab({t}) {
         const t1p=(h.t1Players||[]).map(pName).filter(Boolean);
         const myT0=getTeam(h.t0Id), myT1=getTeam(h.t1Id);
         return (
-          <div key={h.matchNum} className="hist-item">
-            <span className="hist-num">#{h.matchNum}</span>
-            <div className="hist-info">
-              <div className="hist-players">
-                <span style={{color:myT0?.color,fontWeight:700}}>{myT0?.emoji} {myT0?.name}</span>
-                {t0p.length>0&&<span className="text-xs text-muted"> ({t0p.join(", ")})</span>}
-                <span className="text-muted"> vs </span>
-                <span style={{color:myT1?.color,fontWeight:700}}>{myT1?.emoji} {myT1?.name}</span>
-                {t1p.length>0&&<span className="text-xs text-muted"> ({t1p.join(", ")})</span>}
+          <div key={h.matchNum} className="hist-item" style={{display: "flex", flexDirection: "column", gap: 8, padding: "14px 0"}}>
+            <div style={{display: "flex", width: "100%", justifyContent: "space-between", alignItems: "flex-start"}}>
+              <div style={{display: "flex", gap: 10, flex: 1}}>
+                <span className="hist-num" style={{fontSize: 14, paddingTop: 0}}>#{h.matchNum}</span>
+                <div className="hist-info">
+                  <div className="hist-players">
+                    <span style={{color:myT0?.color,fontWeight:700}}>{myT0?.emoji} {myT0?.name}</span>
+                    {t0p.length>0&&<span className="text-xs text-muted"> ({t0p.join(", ")})</span>}
+                    <span className="text-muted" style={{margin: "0 4px"}}>vs</span>
+                    <span style={{color:myT1?.color,fontWeight:700}}>{myT1?.emoji} {myT1?.name}</span>
+                    {t1p.length>0&&<span className="text-xs text-muted"> ({t1p.join(", ")})</span>}
+                  </div>
+                  <div className="hist-result mt-2">
+                    <span className="chip chip-green">✅ {winner?.emoji} {winner?.name}</span>
+                    <span className="chip chip-red">❌ {loser?.emoji} {loser?.name}</span>
+                  </div>
+                </div>
               </div>
-              <div className="hist-result mt-1">
-                <span className="chip chip-green">✅ {winner?.emoji} {winner?.name}</span>
-                <span className="chip chip-red">❌ {loser?.emoji} {loser?.name}</span>
-              </div>
+              <button 
+                className="btn btn-secondary btn-xs" 
+                style={{flexShrink: 0, padding: "6px 10px"}} 
+                onClick={() => protectedAction(() => setEditingMatch(h))}
+              >
+                ✏️ Edit
+              </button>
             </div>
           </div>
         );
       })}
+
+      {editingMatch && (
+        <EditMatchModal
+          t={t}
+          match={editingMatch}
+          onClose={() => setEditingMatch(null)}
+          onConfirm={(mNum, wId, lId, t0p, t1p) => {
+            onEditMatch(t, mNum, wId, lId, t0p, t1p);
+            setEditingMatch(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditMatchModal({t, match, onConfirm, onClose}) {
+  const [t0Players, setT0Players] = useState(match.t0Players || []);
+  const [t1Players, setT1Players] = useState(match.t1Players || []);
+  const [winner, setWinner] = useState(match.winnerId);
+  
+  const team0 = (t.teams || []).find(x => x.id === match.t0Id);
+  const team1 = (t.teams || []).find(x => x.id === match.t1Id);
+  
+  if (!team0 || !team1) return null;
+
+  const hasAnyPlayers = (team0.players?.length > 0) || (team1.players?.length > 0);
+
+  function toggleP(teamIdx, pid) {
+    if(teamIdx===0) setT0Players(p=>p.includes(pid)?p.filter(x=>x!==pid):[...p,pid]);
+    else setT1Players(p=>p.includes(pid)?p.filter(x=>x!==pid):[...p,pid]);
+  }
+
+  function doConfirm() {
+    const loserId = winner === team0.id ? team1.id : team0.id;
+    onConfirm(match.matchNum, winner, loserId, t0Players, t1Players);
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" onClick={e=>e.stopPropagation()} style={{width:"100%",boxSizing:"border-box"}}>
+        <div className="modal-handle"/>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{fontSize:28,marginBottom:4}}>✏️</div>
+          <div className="fd fw-7" style={{fontSize:18,color:"var(--brown)"}}>Edit Match #{match.matchNum}</div>
+          <div className="text-xs text-muted" style={{marginTop:2}}>Update winner or players carefully</div>
+        </div>
+
+        {hasAnyPlayers&&(
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:11,fontWeight:700,color:"var(--slate-l)",letterSpacing:".6px",textTransform:"uppercase",marginBottom:10}}>
+              Who Played? (Optional)
+            </div>
+            {[team0,team1].map((tm,ti)=>{
+              if(!tm.players || tm.players.length===0) return null;
+              const sel = ti===0?t0Players:t1Players;
+              return (
+                <div key={tm.id} style={{marginBottom:12}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
+                    <span style={{fontSize:16}}>{tm.emoji}</span>
+                    <span style={{fontSize:13,fontWeight:700,color:tm.color}}>{tm.name}</span>
+                  </div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                    {tm.players.map(p=>{
+                      const isSelected=sel.includes(p.id);
+                      return (
+                        <button key={p.id} onClick={()=>toggleP(ti,p.id)}
+                          style={{padding:"6px 14px",borderRadius:20,border:`2px solid ${isSelected?tm.color:"#e5e7eb"}`,
+                            background:isSelected?tm.bg:"var(--white)",color:isSelected?tm.color:"var(--brown)",
+                            fontSize:13,fontWeight:600,fontFamily:"var(--fb)",cursor:"pointer",
+                            transition:"all .15s",WebkitTapHighlightColor:"transparent"}}>
+                          {isSelected?"✓ ":""}{p.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+            <div className="divider"/>
+          </div>
+        )}
+
+        <div style={{fontSize:11,fontWeight:700,color:"var(--slate-l)",letterSpacing:".6px",textTransform:"uppercase",marginBottom:12}}>
+          Who Won This Match? *
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:20}}>
+          {[team0,team1].map(tm=>{
+            const isWinner = winner === tm.id;
+            return (
+              <button key={tm.id} onClick={()=>setWinner(tm.id)}
+                style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",
+                  borderRadius:14,border:`2px solid ${isWinner?tm.color:"#e5e7eb"}`,
+                  background:isWinner?tm.bg:"var(--white)",cursor:"pointer",
+                  textAlign:"left",width:"100%",fontFamily:"var(--fb)",
+                  transition:"all .2s",WebkitTapHighlightColor:"transparent",
+                  boxShadow:isWinner?`0 4px 16px ${tm.color}33`:"none"}}>
+                <span style={{fontSize:30,flexShrink:0}}>{tm.emoji}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:700,fontSize:15,color:isWinner?tm.color:"var(--brown)",marginBottom:2}}>{tm.name}</div>
+                </div>
+                <div style={{width:28,height:28,borderRadius:"50%",flexShrink:0,
+                  background:isWinner?tm.color:"#f0ebe0",display:"flex",alignItems:"center",
+                  justifyContent:"center",fontSize:14,color:"white",transition:"all .2s"}}>
+                  {isWinner?"✓":""}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{display:"flex",gap:10}}>
+          <button className="btn btn-secondary" style={{flex:1}} onClick={onClose}>Cancel</button>
+          <button className="btn btn-success btn-lg" style={{flex:2}} disabled={!winner} onClick={doConfirm}>
+            💾 Save Changes
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
