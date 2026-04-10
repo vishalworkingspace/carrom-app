@@ -8,6 +8,8 @@ import {
   deleteDoc,
   collection,
   onSnapshot,
+  runTransaction,
+  serverTimestamp,
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -315,7 +317,8 @@ function getPlayerStats(t) {
   const stats = {};
   if (!t || !t.teams) return stats;
   t.teams.forEach(tm => tm.players?.forEach(p => {
-    stats[p.id] = { matchesPlayed:0, wins:0, losses:0, teamId:tm.id, name:p.name, matches:[] };
+    // Make sure we include 'id' inside the stats object for mapping with unique keys
+    stats[p.id] = { id: p.id, matchesPlayed:0, wins:0, losses:0, teamId:tm.id, name:p.name, matches:[] };
   }));
   (t.history||[]).forEach(h => {
     const allP = [...(h.t0Players||[]), ...(h.t1Players||[])];
@@ -1005,13 +1008,14 @@ function TournamentView({t,onMatch,onUndo,onEditMatch,onDelete,onBack,onUpdateNo
       </div>
 
       <div className="tabs">
-        {[["play","🎮 Play"],["teams","👥 Teams"],["history","📜 History"],["notes","📋 Rules"],["settings","⚙️ Settings"]].map(([k,l])=>(
+        {[["play","🎮 Play"],["teams","👥 Teams"],["kings","👑 Kings"],["history","📜 History"],["notes","📋 Rules"],["settings","⚙️ Settings"]].map(([k,l])=>(
           <button key={k} className={`tab ${tab===k?"active":""}`} onClick={()=>setTab(k)}>{l}</button>
         ))}
       </div>
 
       {tab==="play"&&<PlayTab t={t} onMatch={onMatch} onUndo={onUndo} onTeamClick={setTeamPopup} isAdmin={isAdmin} protectedAction={protectedAction} lockAdmin={lockAdmin}/>}
       {tab==="teams"&&<TeamsTab t={t} onTeamClick={setTeamPopup} onUpdatePlayers={onUpdatePlayers}/>}
+      {tab==="kings"&&<KingsBoardTab t={t}/>}
       {tab==="history"&&<HistoryTab t={t} protectedAction={protectedAction} onEditMatch={onEditMatch}/>}
       {tab==="notes"&&<NotesTab t={t} onUpdateNotes={onUpdateNotes}/>}
       {tab==="settings"&&<SettingsTab t={t} onUpdateSettings={onUpdateSettings} isAdmin={isAdmin} protectedAction={protectedAction} lockAdmin={lockAdmin}/>}
@@ -1837,5 +1841,111 @@ function WinnerBanner({team,onClose}) {
         <button className="btn btn-primary btn-lg btn-full" onClick={onClose}>🎉 Celebrate!</button>
       </div>
     </div>
+  );
+}
+
+// ─── Kings Board Tab (Leaderboard) ────────────────────────────────────────────
+function KingsBoardTab({ t }) {
+  const pStats = getPlayerStats(t);
+
+  return (
+    <>
+      <div className="card mb-4" style={{ 
+        background: "linear-gradient(135deg, #fffbf0 0%, #fff8e6 100%)", 
+        border: "2px solid var(--gold-l)", 
+        textAlign: "center", 
+        padding: "28px 16px",
+        boxShadow: "0 8px 32px rgba(201, 151, 63, 0.15)"
+      }}>
+        <div style={{ fontSize: 56, marginBottom: 8, filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.1))", animation: "float 3s ease-in-out infinite" }}>👑</div>
+        <div className="fd fw-7" style={{ fontSize: 26, color: "var(--gold-d)", letterSpacing: "0.5px" }}>Kings Board</div>
+        <div className="text-sm fw-7" style={{ color: "var(--brown)", marginTop: 8, fontSize: 15 }}>
+          Let's cheer up for the Heroes of this tournament! 🌟
+        </div>
+        <p className="text-xs text-muted mt-2" style={{maxWidth: 280, margin: "8px auto 0"}}>
+          Top 5 Players per team. Ranked by <strong style={{color:"var(--green)"}}>Highest Wins</strong> then <strong style={{color:"var(--blue)"}}>Fewest Matches</strong>.
+        </p>
+      </div>
+
+      {(t.teams || []).map(team => {
+        // Filter players for this specific team
+        const teamPlayers = Object.values(pStats).filter(p => p.teamId === team.id);
+        
+        // Sort logic: Highest wins first. If tied, lowest matches played first.
+        teamPlayers.sort((a, b) => {
+          if (b.wins !== a.wins) return b.wins - a.wins;
+          return a.matchesPlayed - b.matchesPlayed;
+        });
+        
+        // Get Top 5
+        const top5 = teamPlayers.slice(0, 5);
+
+        if (top5.length === 0) return null; // Don't show empty team boards
+
+        return (
+          <div key={team.id} className="card mb-4" style={{ borderTop: `4px solid ${team.color}`, padding: "16px" }}>
+            <div className="flex-between mb-3" style={{ borderBottom: "1px solid var(--warm)", paddingBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 26 }}>{team.emoji}</span>
+                <span className="fd fw-7" style={{ fontSize: 18, color: "var(--brown)" }}>{team.name} Top 5</span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {top5.map((p, idx) => {
+                const rank = idx + 1;
+                const rankMedal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `#${rank}`;
+                const winRate = p.matchesPlayed > 0 ? Math.round((p.wins / p.matchesPlayed) * 100) : 0;
+                const isFirst = rank === 1;
+                
+                return (
+                  <div key={p.id || idx} style={{
+                    display: "flex", alignItems: "center", padding: "12px 14px",
+                    background: isFirst ? "linear-gradient(135deg, #fffdf8, #fffbf0)" : "var(--white)",
+                    border: isFirst ? "1.5px solid var(--gold-l)" : "1px solid #f0ebe0",
+                    borderRadius: 14,
+                    boxShadow: isFirst ? "0 4px 16px rgba(201,151,63,0.12)" : "none",
+                    transition: "transform 0.2s"
+                  }}>
+                    <div style={{ 
+                      width: 36, fontSize: isFirst ? 24 : 18, fontWeight: 900, 
+                      color: isFirst ? "var(--gold-d)" : "var(--slate-l)", 
+                      textAlign: "center", marginRight: 12 
+                    }}>
+                      {rankMedal}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div className="fw-7" style={{ fontSize: 15, color: isFirst ? "var(--gold-d)" : "var(--brown)", marginBottom: 3 }}>
+                        {p.name} {isFirst && <span style={{fontSize: 14, marginLeft: 4}}>👑</span>}
+                      </div>
+                      <div className="text-xs text-muted fw-6">
+                        <span style={{color: "var(--green)"}}>{p.wins} Wins</span> <span style={{opacity: 0.5}}>|</span> {p.matchesPlayed} Matches
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div className={`chip ${isFirst ? "chip-gold" : ""}`} style={{ 
+                        fontSize: 12, 
+                        background: isFirst ? "#fefce8" : "var(--warm)",
+                        border: isFirst ? "1px solid #fef08a" : "none"
+                      }}>
+                        {winRate}% WR
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+      
+      {/* If no players have played any matches, or no teams have players */}
+      {Object.values(pStats).length === 0 && (
+        <div className="empty-state">
+          <div className="empty-icon">👑</div>
+          <p>No players added yet. Add players to see the Kings Board!</p>
+        </div>
+      )}
+    </>
   );
 }
